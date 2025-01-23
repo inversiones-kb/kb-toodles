@@ -1,101 +1,98 @@
+"use client";
+
+import CardTitle from "@/components/home/CardTitle";
+import HomeOrderCard from "@/components/home/HomeOrderCard";
+import LightningIcon from "@public/home/lightning.svg";
+import {
+  IconBabyCarriage,
+  IconCashRegister,
+  IconConfetti,
+  IconInvoice,
+  IconNote,
+  IconUserDollar,
+} from "@tabler/icons-react";
 import Image from "next/image";
+import ORDERS_MOCK from "@/data/mock/orders_mock";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <main className="grid grid-cols-3 grid-rows-7 gap-5 h-full">
+      {/* CHART SECTION */}
+      <section className="col-span-2 row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
+        <CardTitle Icon={IconCashRegister} title="Ventas" />
+      </section>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      {/* ORDERS SECTION */}
+      <section className="row-span-4 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
+        <CardTitle Icon={IconInvoice} title="Pedidos" />
+
+        <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-gutter">
+          {ORDERS_MOCK.map((order) => (
+            <HomeOrderCard
+              key={order.id}
+              created_at={order.created_at}
+              title={order.name}
+              provider={order.provider_id.toString()}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          ))}
+          {ORDERS_MOCK.map((order) => (
+            <HomeOrderCard
+              key={order.id}
+              created_at={order.created_at}
+              title={order.name}
+              provider={order.provider_id.toString()}
+            />
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </section>
+
+      {/* DEBTS SECTION */}
+      <section className="row-span-4 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
+        <CardTitle Icon={IconUserDollar} title="Deudas" />
+      </section>
+
+      {/* CLOCK SECTION */}
+      <section className="row-span-2 bg-layer-2 rounded-3xl flex items-center justify-between gap-20 p-3 relative">
+        <div className="flex flex-col items-right text-right flex-1">
+          <h6 className="text-brand-primary text-6xl font-bold">02</h6>
+          <h6 className="font-bold text-6xl">Feb</h6>
+        </div>
+        <Image
+          src={LightningIcon}
+          className="absolute inset-0 m-auto h-full"
+          alt="Ícono de un rayo"
+        />
+        <div className="flex flex-col items-left text-left flex-1">
+          <h6 className="font-bold text-6xl">10</h6>
+          <h6 className="text-brand-primary text-6xl font-bold">30</h6>
+        </div>
+      </section>
+
+      {/* NOTEPAD SECTION */}
+      <section className="row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
+        <CardTitle Icon={IconNote} title="Notas" />
+      </section>
+
+      {/* SEASON SECTION */}
+      <section className="row-span-2 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
+        <CardTitle Icon={IconConfetti} title="Siguiente temporada" />
+        <div className="flex gap-2.5 h-full w-full">
+          <div className="h-full aspect-auto bg-layer-3 rounded-2xl p-3 flex justify-center items-center">
+            <IconBabyCarriage size={40} className="text-brand-primary" />
+          </div>
+          <div className="flex-1 bg-layer-3 rounded-2xl flex flex-col items-start gap-2 p-3 justify-center">
+            <div className="flex flex-col items-start">
+              <h4 className="text-lg font-bold text-brand-primary">
+                Día de las Madres
+              </h4>
+              <p className="text-soft-light font-semibold text-xs">
+                Mayo del 2025
+              </p>
+            </div>
+            <p className="text-light text-sm">Faltan 4 meses y 15 días</p>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
