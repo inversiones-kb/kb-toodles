@@ -1,4 +1,4 @@
-const ORDERS_MOCK = [
+const MOCK_ORDERS = [
   {
     id: 1,
     name: "Order 1",
@@ -62,4 +62,4 @@ const ORDERS_MOCK = [
   },
 ];
 
-export default ORDERS_MOCK;
+export default MOCK_ORDERS;

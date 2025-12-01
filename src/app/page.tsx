@@ -12,9 +12,15 @@ import {
   IconUserDollar,
 } from "@tabler/icons-react";
 import Image from "next/image";
-import ORDERS_MOCK from "@/data/mock/orders_mock";
+import MOCK_ORDERS from "@/data/mock/orders_mock";
+import HomeDebtCard from "@/components/home/HomeDebtCard";
+import MOCK_DEBTS from "@/data/mock/debts_mock";
+import { Currency } from "@/types/unionTypes";
+import HomeNoteCard from "@/components/home/HomeNoteCard";
+import MOCK_NOTES from "@/data/mock/notes_mock";
+import HomeClockCard from "@/components/home/HomeClockCard";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <main className="grid grid-cols-3 grid-rows-7 gap-5 h-full">
       {/* CHART SECTION */}
@@ -26,16 +32,8 @@ export default function Home() {
       <section className="row-span-4 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
         <CardTitle Icon={IconInvoice} title="Pedidos" />
 
-        <div className="flex flex-col gap-2 overflow-y-auto flex-1 scrollbar-gutter">
-          {ORDERS_MOCK.map((order) => (
-            <HomeOrderCard
-              key={order.id}
-              created_at={order.created_at}
-              title={order.name}
-              provider={order.provider_id.toString()}
-            />
-          ))}
-          {ORDERS_MOCK.map((order) => (
+        <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
+          {MOCK_ORDERS.map((order) => (
             <HomeOrderCard
               key={order.id}
               created_at={order.created_at}
@@ -49,28 +47,34 @@ export default function Home() {
       {/* DEBTS SECTION */}
       <section className="row-span-4 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
         <CardTitle Icon={IconUserDollar} title="Deudas" />
+
+        <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
+          {MOCK_DEBTS.map((debt) => (
+            <HomeDebtCard
+              key={debt.id}
+              created_at={debt.created_at}
+              title={debt.name}
+              amount={debt.amount}
+              currency={debt.currency as Currency}
+            />
+          ))}
+        </div>
       </section>
 
       {/* CLOCK SECTION */}
       <section className="row-span-2 bg-layer-2 rounded-3xl flex items-center justify-between gap-20 p-3 relative">
-        <div className="flex flex-col items-right text-right flex-1">
-          <h6 className="text-brand-primary text-6xl font-bold">02</h6>
-          <h6 className="font-bold text-6xl">Feb</h6>
-        </div>
-        <Image
-          src={LightningIcon}
-          className="absolute inset-0 m-auto h-full"
-          alt="Ícono de un rayo"
-        />
-        <div className="flex flex-col items-left text-left flex-1">
-          <h6 className="font-bold text-6xl">10</h6>
-          <h6 className="text-brand-primary text-6xl font-bold">30</h6>
-        </div>
+        <HomeClockCard />
       </section>
 
       {/* NOTEPAD SECTION */}
       <section className="row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
         <CardTitle Icon={IconNote} title="Notas" />
+
+        <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
+          {MOCK_NOTES.map((note) => (
+            <HomeNoteCard key={note.id} title={note.title} text={note.text} />
+          ))}
+        </div>
       </section>
 
       {/* SEASON SECTION */}

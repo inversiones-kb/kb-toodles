@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import { NextUIProvider } from "@nextui-org/react";
 import { Providers } from "./providers";
 import CustomNavbar from "@/components/general/Navbar";
+import { Toaster } from "sonner";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -22,15 +22,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body>
         <Providers>
+          <Toaster
+            position="top-right"
+            richColors
+            theme="light"
+            toastOptions={{
+              classNames: {
+                default: "rounded-2xl",
+              },
+            }}
+          />
           {/* VIRTUAL BODY */}
           <div
-            className={`${poppins.variable} font-sans grid grid-cols-12 gap-5 p-5 bg-background h-dvh text-light`}
+            className={`${poppins.variable} flex gap-5 p-5 bg-background h-dvh text-light`}
           >
             <CustomNavbar />
-            <div className="col-span-11 h-[calc(100dvh-2.5rem)] max-h-full">
+            <div className="flex-1 h-[calc(100dvh-2.5rem)] max-h-full">
               {children}
             </div>
           </div>
