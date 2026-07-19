@@ -1,101 +1,96 @@
 "use client";
 
-import CardTitle from "@/components/home/CardTitle";
-import HomeOrderCard from "@/components/home/HomeOrderCard";
-import LightningIcon from "@public/home/lightning.svg";
+import CountryPicker from "@/components/forms/CountryPicker";
+import InputGroupSection from "@/components/forms/InputGroupSection";
+import { loginWithEmailAndPassword } from "@/services/auth.service";
+import { createProvider } from "@/services/provider.service";
+import { LoginInput, loginSchema } from "@/validations/auth.validations";
 import {
-  IconBabyCarriage,
-  IconCashRegister,
-  IconConfetti,
-  IconInvoice,
-  IconNote,
-  IconUserDollar,
-} from "@tabler/icons-react";
-import Image from "next/image";
-import MOCK_ORDERS from "@/data/mock/orders_mock";
-import HomeDebtCard from "@/components/home/HomeDebtCard";
-import MOCK_DEBTS from "@/data/mock/debts_mock";
-import { Currency } from "@/types/unionTypes";
-import HomeNoteCard from "@/components/home/HomeNoteCard";
-import MOCK_NOTES from "@/data/mock/notes_mock";
-import HomeClockCard from "@/components/home/HomeClockCard";
+  createProviderSchema,
+  ProviderInput,
+  ProviderOutput,
+} from "@/validations/provider.validations";
+import { Button, Form, Input, Select } from "@heroui/react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { IconMail } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { toast } from "sonner";
+import * as z from "zod";
+import { useAuthStore } from "./context/AuthProvider";
 
 export default function HomePage() {
+  const {
+    watch,
+    setValue,
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "sandrob2204@gmail.com",
+      password: "123456",
+    },
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const user = useAuthStore((store) => store.user);
+
+  const onSubmit = async (data: LoginInput) => {
+    setIsLoading(true);
+
+    const res = await loginWithEmailAndPassword(data);
+
+    setIsLoading(false);
+
+    if (!res.success) {
+      return toast.error(res.message);
+    }
+
+    toast.success(res.message);
+    /* return router.push("/proveedores"); */
+  };
+
   return (
-    <main className="grid grid-cols-3 grid-rows-7 gap-5 h-full">
-      {/* CHART SECTION */}
-      <section className="col-span-2 row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconCashRegister} title="Ventas" />
-      </section>
+    <main className="h-dvh max-h-full bg-background flex justify-center items-center">
+      <section className="w-full max-w-md p-4 rounded-3xl overflow-y-auto h-fit bg-layer-2 flex justify-center">
+        <Form onSubmit={handleSubmit(onSubmit)} className="w-full">
+          <h2 className="text-2xl text-center w-full font-semibold mb-4">
+            Iniciar sesión
+          </h2>
 
-      {/* ORDERS SECTION */}
-      <section className="row-span-4 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconInvoice} title="Pedidos" />
+          <Input
+            label="Correo"
+            variant="bordered"
+            size="sm"
+            radius="lg"
+            isInvalid={Boolean(errors.email?.message)}
+            errorMessage={errors.email?.message}
+            {...register("email")}
+          />
+          <Input
+            label="Contraseña"
+            variant="bordered"
+            size="sm"
+            radius="lg"
+            isInvalid={Boolean(errors.password?.message)}
+            errorMessage={errors.password?.message}
+            {...register("password")}
+          />
 
-        <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
-          {MOCK_ORDERS.map((order) => (
-            <HomeOrderCard
-              key={order.id}
-              created_at={order.created_at}
-              title={order.name}
-              provider={order.provider_id.toString()}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* DEBTS SECTION */}
-      <section className="row-span-4 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconUserDollar} title="Deudas" />
-
-        <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
-          {MOCK_DEBTS.map((debt) => (
-            <HomeDebtCard
-              key={debt.id}
-              created_at={debt.created_at}
-              title={debt.name}
-              amount={debt.amount}
-              currency={debt.currency as Currency}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* CLOCK SECTION */}
-      <section className="row-span-2 bg-layer-2 rounded-3xl flex items-center justify-between gap-20 p-3 relative">
-        <HomeClockCard />
-      </section>
-
-      {/* NOTEPAD SECTION */}
-      <section className="row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconNote} title="Notas" />
-
-        <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
-          {MOCK_NOTES.map((note) => (
-            <HomeNoteCard key={note.id} title={note.title} text={note.text} />
-          ))}
-        </div>
-      </section>
-
-      {/* SEASON SECTION */}
-      <section className="row-span-2 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconConfetti} title="Siguiente temporada" />
-        <div className="flex gap-2.5 h-full w-full">
-          <div className="h-full aspect-auto bg-layer-3 rounded-2xl p-3 flex justify-center items-center">
-            <IconBabyCarriage size={40} className="text-brand-primary" />
-          </div>
-          <div className="flex-1 bg-layer-3 rounded-2xl flex flex-col items-start gap-2 p-3 justify-center">
-            <div className="flex flex-col items-start">
-              <h4 className="text-lg font-bold text-brand-primary">
-                Día de las Madres
-              </h4>
-              <p className="text-soft-light font-semibold text-xs">
-                Mayo del 2025
-              </p>
-            </div>
-            <p className="text-light text-sm">Faltan 4 meses y 15 días</p>
-          </div>
-        </div>
+          <Button
+            type="submit"
+            color="primary"
+            className="w-full mt-4"
+            isLoading={isLoading}
+          >
+            Iniciar sesión
+          </Button>
+        </Form>
       </section>
     </main>
   );

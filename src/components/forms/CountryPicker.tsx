@@ -1,4 +1,7 @@
-import { availableCountries } from "@/types/providersTypes";
+import {
+  PROVIDER_COUNTRIES,
+  PROVIDER_COUNTRY_OPTIONS,
+} from "@/types/providersTypes";
 import { Select, SelectItem, SelectProps } from "@heroui/react";
 import React from "react";
 import Image from "next/image";
@@ -14,9 +17,10 @@ const CountryPicker = ({
   showNullCountry = false,
   ...props
 }: CountryPickerProps) => {
+  console.log(props.value);
   return (
     <Select
-      defaultSelectedKeys={availableCountries[0].code}
+      defaultSelectedKeys={props.defaultSelectedKeys || [PROVIDER_COUNTRIES[0]]}
       label={props.label || "País"}
       variant="bordered"
       size="sm"
@@ -25,8 +29,11 @@ const CountryPicker = ({
       disallowEmptySelection={true}
       items={
         showNullCountry
-          ? [{ code: "", label: "Todos", flagUrl: "" }, ...availableCountries]
-          : availableCountries
+          ? [
+              { key: "", title: "Todos", flagUrl: "" },
+              ...PROVIDER_COUNTRY_OPTIONS,
+            ]
+          : PROVIDER_COUNTRY_OPTIONS
       }
       isInvalid={Boolean(errorMessage)}
       errorMessage={errorMessage}
@@ -36,7 +43,7 @@ const CountryPicker = ({
             {country.data?.flagUrl ? (
               <Image
                 src={country.data!.flagUrl}
-                alt={country.data!.label}
+                alt={country.data!.title}
                 width={20}
                 height={20}
                 className="w-5 h-auto rounded-sm"
@@ -51,12 +58,12 @@ const CountryPicker = ({
     >
       {(country) => (
         <SelectItem
-          key={country.code}
+          key={country.key}
           startContent={
             country.flagUrl ? (
               <Image
                 src={country.flagUrl}
-                alt={country.label}
+                alt={country.title}
                 width={20}
                 height={20}
                 className="w-5 h-auto rounded-sm"
@@ -66,7 +73,7 @@ const CountryPicker = ({
             )
           }
         >
-          {country.label}
+          {country.title}
         </SelectItem>
       )}
     </Select>

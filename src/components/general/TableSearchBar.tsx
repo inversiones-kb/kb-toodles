@@ -23,6 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { NewProviderFields, ProviderType } from "@/types/providersTypes";
 import useDebounce from "@/hooks/useDebounce";
+import { ProviderFilters } from "../provider/ProviderTableToolbar";
 
 const validationSchema = z.object({
   search: z.string().optional(),
@@ -34,16 +35,9 @@ const validationSchema = z.object({
   dateRange: z.custom<DateRange>(),
 });
 
-export interface ProvidersFilters {
-  search: string;
-  type: ProviderType | "";
-  country: string;
-  dateRange: DateRange;
-}
-
 interface TableSearchBarProps {
-  setFilters: Dispatch<SetStateAction<ProvidersFilters>>;
-  filters?: ProvidersFilters;
+  setFilters: Dispatch<SetStateAction<ProviderFilters>>;
+  filters?: ProviderFilters;
 }
 
 const TableSearchBar = ({ filters, setFilters }: TableSearchBarProps) => {
@@ -55,14 +49,14 @@ const TableSearchBar = ({ filters, setFilters }: TableSearchBarProps) => {
     watch,
     setValue,
     formState: { errors },
-  } = useForm<ProvidersFilters>({
+  } = useForm<ProviderFilters>({
     resolver: zodResolver(validationSchema),
     defaultValues: {
       ...filters,
     },
   });
 
-  const onSubmit: SubmitHandler<ProvidersFilters> = async (data) => {
+  const onSubmit: SubmitHandler<ProviderFilters> = async (data) => {
     setIsOpen(false);
 
     setFilters(data);
@@ -105,7 +99,7 @@ const TableSearchBar = ({ filters, setFilters }: TableSearchBarProps) => {
           handleSubmit(onSubmit)();
         }}
         defaultValue={watch("dateRange")}
-        maxValue={today(getLocalTimeZone())}
+        maxValue={today(getLocalTimeZone()) as any}
       />
 
       <Popover

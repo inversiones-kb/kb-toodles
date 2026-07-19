@@ -7,18 +7,35 @@ import LogoImage from "@public/logo.svg";
 import {
   Accordion,
   AccordionItem,
+  Avatar,
   Button,
   Divider,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Tooltip,
+  useDisclosure,
 } from "@heroui/react";
 import { IconChevronsRight, IconDashboard } from "@tabler/icons-react";
 import clsx from "clsx";
 import { NAVBAR_DATA } from "@/data/navbarData";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useNavbarStore } from "@/store/navbarStore";
+import { useAuthStore } from "@/app/context/AuthProvider";
+import { logoutUser } from "@/services/auth.service";
+import { toast } from "sonner";
 const CustomNavbar = () => {
   const pathname = usePathname();
   const { isCollapsed, setIsCollapsed } = useNavbarStore();
+  const { user, isLoading, clearAuth } = useAuthStore((store) => store);
+  const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
+  const router = useRouter();
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
 
   useEffect(() => {
     const storedState = localStorage.getItem("navbarIsCollapsed");
@@ -36,6 +53,24 @@ const CustomNavbar = () => {
     setIsCollapsed(!isCollapsed);
   }
 
+  const handleLogout = async () => {
+    setDeleteLoading(true);
+    // 1. Matamos la sesión en el backend (Firebase)
+    const result = await logoutUser();
+
+    if (result.success) {
+      // 2. Limpiamos la memoria del cliente (Zustand)
+      clearAuth();
+
+      // 3. Expulsamos al usuario a la pantalla de login
+      router.push("/");
+    } else {
+      // Aquí podrías disparar un toast de error si falla la red
+      toast.error("No se pudo cerrar sesión");
+    }
+    setDeleteLoading(false);
+  };
+
   return (
     <nav
       className={clsx([
@@ -44,7 +79,28 @@ const CustomNavbar = () => {
         { fadeIn: isCollapsed != null },
       ])}
     >
-      <Link href={"/"} className="flex items-center gap-3">
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalContent>
+          <ModalHeader>¿Cerrar sesión?</ModalHeader>
+          <ModalBody>
+            <p>Volverás a la pantalla de iniciar sesión</p>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              variant="light"
+              onPress={onClose}
+              isDisabled={deleteLoading}
+            >
+              Cancelar
+            </Button>
+            <Button color="danger" onPress={handleLogout} isLoading={isLoading}>
+              Sí, salir
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Link href={"/dashboard"} className="flex items-center gap-3">
         <Image
           width={120}
           height={120}
@@ -71,16 +127,16 @@ const CustomNavbar = () => {
           <Link
             className={clsx([
               "flex items-center gap-3 p-2 hover:bg-layer-3 transition-colors rounded-2xl",
-              { "text-light bg-light/10": pathname === "/" },
+              { "text-light bg-light/10": pathname === "/dashboard" },
             ])}
-            href={"/"}
+            href={"/dashboard"}
           >
             <IconDashboard size={32} />
             <span className="w-full text-ellipsis overflow-hidden whitespace-nowrap text-xs">
               Panel
             </span>
           </Link>
-          <div className="h-[1px]" />
+          <div className="h-px" />
           <Accordion
             className="px-0 flex flex-col"
             variant="light"
@@ -98,6 +154,7 @@ const CustomNavbar = () => {
                 classNames={{
                   title: "text-xs text-light",
                   base: "hover:bg-layer-3 px-2 rounded-2xl",
+                  trigger: "cursor-pointer",
                   content: "py-0 pb-2",
                   indicator: "text-soft-light",
                 }}
@@ -136,12 +193,12 @@ const CustomNavbar = () => {
               <Button
                 isIconOnly
                 as={Link}
-                href={"/"}
+                href={"/dashboard"}
                 color="secondary"
                 className={clsx([
                   "text-soft-light",
                   {
-                    "text-light bg-light/10": pathname === "/",
+                    "text-light bg-light/10": pathname === "/dashboard",
                   },
                 ])}
                 variant="light"
@@ -162,7 +219,7 @@ const CustomNavbar = () => {
                     "text-soft-light",
                     {
                       "text-light bg-light/10": pathname.includes(
-                        route.items[0].href
+                        route.items[0].href,
                       ),
                     },
                   ])}
@@ -180,36 +237,49 @@ const CustomNavbar = () => {
 
       {/* BOTTOM CONTENT */}
       <div className="flex flex-col gap-2 items-start w-full">
-        <Button
-          variant="light"
-          color="secondary"
-          className="flex justify-start px-0 items-center gap-2 w-full rounded-2xl max-w-full min-w-0"
-        >
-          <Tooltip
-            isDisabled={!isCollapsed}
-            content="Mi perfil"
-            placement="right"
-            color="secondary"
-          >
-            <div
-              className={clsx([
-                "bg-brand-primary/10 text-brand-primary h-full font-medium text-lg p-2 aspect-square grid place-content-center rounded-2xl",
-              ])}
+        <Popover placement="right" offset={0} showArrow>
+          <PopoverTrigger>
+            <Button
+              variant="light"
+              color="secondary"
+              className="flex justify-start px-0 items-center gap-2 w-full rounded-2xl max-w-full min-w-0"
             >
-              KB
-            </div>
-          </Tooltip>
-          <p
-            className={clsx([
-              "text-xs transition-opacity text-light",
-              { "opacity-0": isCollapsed },
-            ])}
-          >
-            Keibis Belandria
-          </p>
-        </Button>
+              <Tooltip
+                isDisabled={!isCollapsed}
+                content="Mi perfil"
+                placement="right"
+                color="secondary"
+              >
+                <Avatar
+                  showFallback
+                  color="primary"
+                  className="rounded-2xl bg-primary/20 text-primary"
+                  fallback={
+                    <p className="text-lg">
+                      {user?.name[0]}
+                      {user?.last_name[0]}
+                    </p>
+                  }
+                />
+              </Tooltip>
+              <p
+                className={clsx([
+                  "text-xs transition-opacity text-light",
+                  { "opacity-0": isCollapsed },
+                ])}
+              >
+                {user?.name} {user?.last_name}
+              </p>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="p-1 rounded-2xl">
+            <Button variant="flat" color="danger" onPress={onOpen}>
+              Cerrar sesión
+            </Button>
+          </PopoverContent>
+        </Popover>
 
-        <Button
+        {/*  <Button
           isIconOnly
           className="w-full rounded-2xl"
           color="secondary"
@@ -222,7 +292,7 @@ const CustomNavbar = () => {
               { "rotate-180": !isCollapsed },
             ])}
           />
-        </Button>
+        </Button> */}
       </div>
     </nav>
   );

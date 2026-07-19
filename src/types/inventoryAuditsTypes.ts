@@ -1,4 +1,4 @@
-import { DateValue } from "@heroui/react";
+import { DateValue } from "@internationalized/date";
 
 export interface InventoryAuditItem {
   code: string;
@@ -13,7 +13,9 @@ export interface InventoryAudit {
   items: InventoryAuditItem[];
 }
 
-export interface NewInventoryAuditFields
-  extends Omit<InventoryAudit, "id" | "date"> {
+export interface NewInventoryAuditFields extends Omit<
+  InventoryAudit,
+  "id" | "date"
+> {
   date: DateValue;
 }

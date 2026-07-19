@@ -9,6 +9,7 @@ import {
   IconUserDollar,
   IconUsersGroup,
   IconCircleDashedCheck,
+  IconKey,
 } from "@tabler/icons-react";
 
 interface NavbarItem extends NavbarSection {
@@ -29,14 +30,14 @@ export const NAVBAR_DATA: NavbarSection[] = [
     items: [
       {
         name: "Ver",
-        href: "/cuadre-de-cajas",
+        href: "/dashboard/cuadre-de-cajas",
         Icon: IconEye,
       },
-      {
+      /* {
         name: "Crear",
-        href: "/cuadre-de-cajas/crear",
+        href: "/dashboard/cuadre-de-cajas/crear",
         Icon: IconPlus,
-      },
+      }, */
     ],
   },
   {
@@ -45,12 +46,28 @@ export const NAVBAR_DATA: NavbarSection[] = [
     items: [
       {
         name: "Ver",
-        href: "/empleados",
+        href: "/dashboard/empleados",
         Icon: IconEye,
       },
       {
         name: "Crear",
-        href: "/empleados/crear",
+        href: "/dashboard/empleados/crear",
+        Icon: IconPlus,
+      },
+    ],
+  },
+  {
+    name: "Usuarios",
+    Icon: IconKey,
+    items: [
+      {
+        name: "Ver",
+        href: "/dashboard/usuarios",
+        Icon: IconEye,
+      },
+      {
+        name: "Crear",
+        href: "/dashboard/usuarios/crear",
         Icon: IconPlus,
       },
     ],
@@ -61,78 +78,78 @@ export const NAVBAR_DATA: NavbarSection[] = [
     items: [
       {
         name: "Ver",
-        href: "/proveedores",
+        href: "/dashboard/proveedores",
         Icon: IconEye,
       },
       {
         name: "Crear",
-        href: "/proveedores/crear",
+        href: "/dashboard/proveedores/crear",
         Icon: IconPlus,
       },
     ],
   },
-  {
+  /* {
     name: "Deudas",
     Icon: IconCash,
     items: [
       {
         name: "Ver",
-        href: "/deudas",
+        href: "/dashboard/deudas",
         Icon: IconEye,
       },
       {
         name: "Crear",
-        href: "/deudas/crear",
+        href: "/dashboard/deudas/crear",
         Icon: IconPlus,
       },
     ],
-  },
-  {
+  }, */
+  /* {
     name: "Pedidos",
     Icon: IconInvoice,
     items: [
       {
         name: "Ver",
-        href: "/pedidos",
+        href: "/dashboard/pedidos",
         Icon: IconEye,
       },
       {
         name: "Crear",
-        href: "/pedidos/crear",
+        href: "/dashboard/pedidos/crear",
         Icon: IconPlus,
       },
     ],
-  },
+  }, */
   {
     name: "Notas",
     Icon: IconNote,
     items: [
       {
         name: "Ver",
-        href: "/notas",
+        href: "/dashboard/notas",
         Icon: IconEye,
       },
       {
         name: "Crear",
-        href: "/notas/crear",
+        href: "/dashboard/notas/crear",
         Icon: IconPlus,
       },
     ],
   },
-  {
+  /*  {
     name: "Auditorias de Inventario",
     Icon: IconCircleDashedCheck,
     items: [
       {
         name: "Ver",
-        href: "/auditorias-inventario",
+        href: "/dashboard/auditorias-inventario",
         Icon: IconEye,
       },
       {
         name: "Crear",
-        href: "/auditorias-inventario/crear",
+        href: "/dashboard/auditorias-inventario/crear",
         Icon: IconPlus,
       },
     ],
-  },
+  }, */
 ];

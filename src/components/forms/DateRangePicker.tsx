@@ -3,25 +3,13 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  CalendarDate,
-  Calendar,
   RangeCalendar,
-  RangeValue,
-  DateValue,
   RangeCalendarProps,
 } from "@heroui/react";
 import { IconCalendarWeek, IconChevronDown } from "@tabler/icons-react";
 import React from "react";
-import {
-  getLocalTimeZone,
-  parseAbsolute,
-  parseAbsoluteToLocal,
-  parseDate,
-  parseDateTime,
-  parseZonedDateTime,
-} from "@internationalized/date";
+import { getLocalTimeZone } from "@internationalized/date";
 import { dateToString } from "@/utils/dateUtils";
-import { DateRange } from "@/types/coreTypes";
 
 interface DateRangePickerProps extends RangeCalendarProps {}
 
@@ -43,12 +31,12 @@ const DateRangePicker = ({ onChange, ...props }: DateRangePickerProps) => {
           >
             {dateToString(
               props.defaultValue?.start.toDate(getLocalTimeZone()),
-              "DD/MM/YYYY"
+              "DD/MM/YYYY",
             )}
             {" - "}
             {dateToString(
               props.defaultValue?.end.toDate(getLocalTimeZone()),
-              "DD/MM/YYYY"
+              "DD/MM/YYYY",
             )}
           </Button>
         </PopoverTrigger>
@@ -63,8 +51,8 @@ const DateRangePicker = ({ onChange, ...props }: DateRangePickerProps) => {
               if (onChange) onChange(value);
               setIsOpen(false);
             }}
-            {...props}
             defaultValue={props.defaultValue}
+            {...props}
           />
         </PopoverContent>
       </Popover>

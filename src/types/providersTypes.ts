@@ -1,39 +1,26 @@
 import { Icon, IconBuildingStore, IconUser } from "@tabler/icons-react";
 
-export interface Country {
-  label: string;
-  code: string;
-  flagUrl: string;
-}
-export type ProviderType = "FREELANCER" | "STORE";
+export const PROVIDER_TYPES = ["FREELANCER", "STORE"] as const;
+export type ProviderType = (typeof PROVIDER_TYPES)[number];
+export const PROVIDER_TYPE_MAP: Record<ProviderType, { title: string }> = {
+  FREELANCER: { title: "Independiente" },
+  STORE: { title: "Tienda" },
+};
+export const PROVIDER_TYPE_OPTIONS = PROVIDER_TYPES.map((key) => ({
+  key, // Lo usaremos para el 'key' y 'value' del SelectItem
+  ...PROVIDER_TYPE_MAP[key], // Extraemos el title (y futuros iconos)
+}));
 
-export const availableCountries: Country[] = [
-  { label: "Colombia", code: "COL", flagUrl: "https://flagcdn.com/co.svg" },
-  { label: "Venezuela", code: "VEN", flagUrl: "https://flagcdn.com/ve.svg" },
-];
-
-export function getProviderTypeData(type: ProviderType): {
-  label: string;
-  icon: Icon;
-} {
-  switch (type) {
-    case "FREELANCER":
-      return { label: "Freelancer", icon: IconUser };
-    case "STORE":
-      return { label: "Tienda", icon: IconBuildingStore };
-  }
-}
-
-export interface Provider {
-  id: string;
-  name: string;
-  country: Country;
-  description?: string;
-  type: ProviderType;
-  created_at: Date;
-}
-
-export interface NewProviderFields
-  extends Omit<Provider, "id" | "created_at" | "country"> {
-  country: string;
-}
+export const PROVIDER_COUNTRIES = ["VE", "CO"] as const;
+export type ProviderCountry = (typeof PROVIDER_COUNTRIES)[number];
+export const PROVIDER_COUNTRY_MAP: Record<
+  ProviderCountry,
+  { title: string; flagUrl: string }
+> = {
+  VE: { title: "Venezuela", flagUrl: "https://flagcdn.com/ve.svg" },
+  CO: { title: "Colombia", flagUrl: "https://flagcdn.com/co.svg" },
+};
+export const PROVIDER_COUNTRY_OPTIONS = PROVIDER_COUNTRIES.map((key) => ({
+  key, // Lo usaremos para el 'key' y 'value' del SelectItem
+  ...PROVIDER_COUNTRY_MAP[key], // Extraemos el title (y futuros iconos)
+}));

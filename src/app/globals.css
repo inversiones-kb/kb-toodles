@@ -1,21 +1,21 @@
 @import "tailwindcss";
-@plugin './hero.ts';
 
+@plugin './hero.ts';
 @source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+
 @custom-variant dark (&:where(.dark, .dark *));
 
-
 @theme {
-  --color-background: #121212,
-  --color-layer-2: #1E1E1E,
-  --color-layer-3: #292929,
-  --color-light: #F7F7F7,
-  --color-soft-light: #AAAAAA,
-  --color-brand-primary: #EA2778,
-  --color-brand-secondary: #FFDC01,
-  --color-success: #4CAF50,
-  --color-error: #ED5C5C,
-  --font-sans: var(--font-poppins),
+  --color-background: #121212;
+  --color-layer-2: #1e1e1e;
+  --color-layer-3: #292929;
+  --color-light: #f7f7f7;
+  --color-soft-light: #aaaaaa;
+  --color-brand-primary: #ea2778;
+  --color-brand-secondary: #ffdc01;
+  --color-success: #4caf50;
+  --color-error: #ed5c5c;
+  --font-sans: var(--font-poppins);
 }
 
 .scrollbar-gutter {
