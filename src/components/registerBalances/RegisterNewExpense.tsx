@@ -1,4 +1,5 @@
 import { RegisterExpense } from "@/types/registerBalance.types";
+import { ExpenseProxy } from "@/validations/expense.validations";
 import {
   Modal,
   ModalContent,
@@ -16,7 +17,7 @@ import { toast } from "sonner";
 interface Props {
   isOpen: boolean;
   onOpenChange: () => void;
-  handleNewExpense: (data: Omit<RegisterExpense, "id">) => void;
+  handleNewExpense: (data: Omit<ExpenseProxy, "id">) => void;
 }
 
 const RegisterNewExpense = ({
@@ -106,9 +107,8 @@ const RegisterNewExpense = ({
                     return toast.warning("El valor del gasto no puede ser 0");
 
                   handleNewExpense({
-                    amount: amount,
-                    currency: currency,
-                    reason: description,
+                    amount,
+                    description,
                   });
 
                   setCurrency("COP");

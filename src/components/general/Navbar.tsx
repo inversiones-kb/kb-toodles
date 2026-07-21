@@ -18,24 +18,40 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  Select,
+  SelectItem,
   Tooltip,
   useDisclosure,
 } from "@heroui/react";
-import { IconChevronsRight, IconDashboard } from "@tabler/icons-react";
+import {
+  IconChevronsRight,
+  IconDashboard,
+  IconSelector,
+} from "@tabler/icons-react";
 import clsx from "clsx";
 import { NAVBAR_DATA } from "@/data/navbarData";
-import { usePathname, useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useNavbarStore } from "@/store/navbarStore";
 import { useAuthStore } from "@/app/context/AuthProvider";
 import { logoutUser } from "@/services/auth.service";
 import { toast } from "sonner";
+import BranchLink from "./BranchLink";
+import { useBranchRouter } from "@/hooks/useBranchRouter";
+import {
+  BUSINESS_BRANCH_MAP,
+  BUSINESS_BRANCH_OPTIONS,
+  BUSINESS_BRANCHES,
+  BusinessBranch,
+} from "@/types/businessBranch.types";
+
 const CustomNavbar = () => {
   const pathname = usePathname();
   const { isCollapsed, setIsCollapsed } = useNavbarStore();
   const { user, isLoading, clearAuth } = useAuthStore((store) => store);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
-  const router = useRouter();
+  const nextRouter = useRouter();
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const branch = useParams().branch as keyof typeof BUSINESS_BRANCH_MAP;
 
   useEffect(() => {
     const storedState = localStorage.getItem("navbarIsCollapsed");
@@ -63,7 +79,7 @@ const CustomNavbar = () => {
       clearAuth();
 
       // 3. Expulsamos al usuario a la pantalla de login
-      router.push("/");
+      nextRouter.push("/");
     } else {
       // Aquí podrías disparar un toast de error si falla la red
       toast.error("No se pudo cerrar sesión");
@@ -71,11 +87,21 @@ const CustomNavbar = () => {
     setDeleteLoading(false);
   };
 
+  const onBranchChange = (newBranch: BusinessBranch) => {
+    if (!newBranch || newBranch === branch) return;
+
+    // Magia de reemplazo: cambiamos "/la-fria" por "/main_st" en la cadena de texto
+    const newPath = pathname.replace(`/${branch}`, `/${newBranch}`);
+
+    // Ejecutamos la navegación fluida
+    nextRouter.push(newPath);
+  };
+
   return (
     <nav
       className={clsx([
-        "bg-layer-2 h-full rounded-3xl flex flex-col p-3 items-left justify-between w-full opacity-0 max-w-16 transition-all gap-3 overflow-hidden",
-        { "max-w-56": !isCollapsed },
+        "bg-layer-2 h-full rounded-3xl flex flex-col p-3 items-left justify-between w-full opacity-0 transition-all gap-3 overflow-hidden max-w-56 min-w-56",
+        /* { "max-w-56 min-w-56": !isCollapsed }, */
         { fadeIn: isCollapsed != null },
       ])}
     >
@@ -100,7 +126,7 @@ const CustomNavbar = () => {
         </ModalContent>
       </Modal>
 
-      <Link href={"/dashboard"} className="flex items-center gap-3">
+      <BranchLink href={"/dashboard"} className="flex items-center gap-3">
         <Image
           width={120}
           height={120}
@@ -113,7 +139,7 @@ const CustomNavbar = () => {
         >
           Toddles
         </p>
-      </Link>
+      </BranchLink>
 
       <Divider className="bg-layer-3 my-2" />
 
@@ -124,7 +150,7 @@ const CustomNavbar = () => {
             { "opacity-0 z-0 overflow-hidden": isCollapsed },
           ])}
         >
-          <Link
+          <BranchLink
             className={clsx([
               "flex items-center gap-3 p-2 hover:bg-layer-3 transition-colors rounded-2xl",
               { "text-light bg-light/10": pathname === "/dashboard" },
@@ -135,7 +161,7 @@ const CustomNavbar = () => {
             <span className="w-full text-ellipsis overflow-hidden whitespace-nowrap text-xs">
               Panel
             </span>
-          </Link>
+          </BranchLink>
           <div className="h-px" />
           <Accordion
             className="px-0 flex flex-col"
@@ -160,7 +186,7 @@ const CustomNavbar = () => {
                 }}
               >
                 {item.items?.map((child) => (
-                  <Link
+                  <BranchLink
                     key={child.href}
                     className={clsx([
                       "flex items-center gap-1 p-2 hover:bg-layer-2 transition-colors rounded-lg text-soft-light",
@@ -175,7 +201,7 @@ const CustomNavbar = () => {
                     <span className="w-full text-ellipsis overflow-hidden whitespace-nowrap text-xs">
                       {child.name}
                     </span>
-                  </Link>
+                  </BranchLink>
                 ))}
               </AccordionItem>
             ))}
@@ -192,7 +218,7 @@ const CustomNavbar = () => {
             <Tooltip content="Panel" placement="right" color="secondary">
               <Button
                 isIconOnly
-                as={Link}
+                as={BranchLink}
                 href={"/dashboard"}
                 color="secondary"
                 className={clsx([
@@ -212,7 +238,7 @@ const CustomNavbar = () => {
               <Tooltip content={route.name} placement="right" color="secondary">
                 <Button
                   isIconOnly
-                  as={Link}
+                  as={BranchLink}
                   href={route.items[0].href}
                   color="secondary"
                   className={clsx([
@@ -237,6 +263,23 @@ const CustomNavbar = () => {
 
       {/* BOTTOM CONTENT */}
       <div className="flex flex-col gap-2 items-start w-full">
+        <Select
+          defaultSelectedKeys={[branch || BUSINESS_BRANCHES[0]]}
+          label="Sucursal"
+          variant="bordered"
+          size="sm"
+          radius="lg"
+          disallowEmptySelection={true}
+          items={BUSINESS_BRANCH_OPTIONS}
+          disableSelectorIconRotation
+          selectorIcon={<IconSelector />}
+          onSelectionChange={(value) =>
+            onBranchChange(value.currentKey as keyof typeof BUSINESS_BRANCH_MAP)
+          }
+        >
+          {(item) => <SelectItem key={item.key}>{item.title}</SelectItem>}
+        </Select>
+
         <Popover placement="right" offset={0} showArrow>
           <PopoverTrigger>
             <Button

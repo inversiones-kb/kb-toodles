@@ -29,8 +29,7 @@ export async function createUserAction(
 
     // 3. Preparamos el documento para Firestore (excluyendo la contraseña)
     const now = new Date();
-    const userDocument: User = {
-      role_data: USER_ROLE_MAP[parsedData.role],
+    const userDocument: Omit<User, "branch_data" | "role_data"> = {
       id: userRecord.uid,
       is_deleted: false,
       deleted_at: null,
@@ -40,6 +39,7 @@ export async function createUserAction(
       last_name: parsedData.last_name,
       name: parsedData.name,
       role: parsedData.role,
+      branch: parsedData.branch,
 
       created_at: now,
       uid: userRecord.uid,

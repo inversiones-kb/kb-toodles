@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { today, getLocalTimeZone, parseDate } from "@internationalized/date";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Button,
   DatePicker,
@@ -22,6 +22,8 @@ import { USER_ROLE_OPTIONS, USER_ROLES } from "@/types/user.types";
 import { dateToString } from "@/utils/dateUtils";
 import DragDropUploader from "../forms/DragDropUploader";
 import { SHIFT_OPTIONS, SHIFTS } from "@/types/employee.types";
+import { useBranchRouter } from "@/hooks/useBranchRouter";
+import { BUSINESS_BRANCH_MAP } from "@/types/businessBranch.types";
 
 interface Props {
   onSubmit: SubmitHandler<EmployeeInput>;
@@ -35,6 +37,8 @@ const EmployeeForm = ({
 
   showButton = false,
 }: Props) => {
+  const branch = useParams().branch as keyof typeof BUSINESS_BRANCH_MAP;
+
   const {
     watch,
     setValue,
@@ -66,15 +70,19 @@ const EmployeeForm = ({
           salary: initialData.salary,
           email: initialData.email,
           address: initialData.address,
+          branch: initialData.branch,
         }
       : {
           doc_type: "V",
 
           hired_at: today(getLocalTimeZone()) as any,
           birthdate: today(getLocalTimeZone()) as any,
+          branch: branch,
         },
   });
-  const router = useRouter();
+  const router = useBranchRouter();
+
+  console.log(errors);
 
   return (
     <div className="w-full overflow-y-auto flex justify-center pb-10">

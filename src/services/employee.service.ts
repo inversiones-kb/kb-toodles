@@ -3,6 +3,7 @@ import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
 import { CustomApiResponse } from "@/types/coreTypes";
 import { API_MESSAGES } from "@/utils/apiUtils";
 import {
+  Employee,
   EmployeeInput,
   EmployeeOutput,
 } from "@/validations/employee.validations";
@@ -18,6 +19,7 @@ export const createEmployee = async (
       ...data,
       created_at: new Date(),
       is_deleted: false,
+      is_fired: false,
     });
     return {
       success: true,

@@ -1,6 +1,8 @@
 import * as z from "zod";
 import { Employee } from "./employee.validations";
 import { REGISTER_BALANCE_STATUSES } from "@/types/registerBalance.types";
+import { BUSINESS_BRANCHES } from "@/types/businessBranch.types";
+import { User } from "./user.validations";
 
 /* 
 ? NOTA:
@@ -36,6 +38,8 @@ export const createRegisterBalanceSchema = z.object({
       })
       .optional(),
   }),
+
+  branch: z.enum(BUSINESS_BRANCHES, { message: "Sucursal inválida" }),
 });
 
 export type RegisterBalanceInput = z.input<typeof createRegisterBalanceSchema>;
@@ -43,7 +47,7 @@ export type RegisterBalanceInput = z.input<typeof createRegisterBalanceSchema>;
 export type RegisterBalance = RegisterBalanceInput & {
   id: string;
   user_id: string;
-  employee_snapshot: Pick<Employee, "name" | "last_name" | "id" | "role">;
+  user_snapshot: Pick<User, "name" | "last_name" | "id" | "role">;
   created_at: Date;
 
   open_at: Date;

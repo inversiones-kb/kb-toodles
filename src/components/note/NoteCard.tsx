@@ -2,10 +2,11 @@ import { Note } from "@/validations/note.validations";
 import { Button, Popover, PopoverContent, PopoverTrigger } from "@heroui/react";
 import { IconDots } from "@tabler/icons-react";
 import Link from "next/link";
+import BranchLink from "../general/BranchLink";
 
 interface Props {
   data: Note;
-  handleDelete?: (id: Note) => void;
+  handleDelete?: (item: Note, isHardDelete: boolean) => void;
 }
 
 const NoteCard = ({ data, handleDelete }: Props) => {
@@ -22,7 +23,7 @@ const NoteCard = ({ data, handleDelete }: Props) => {
           </PopoverTrigger>
           <PopoverContent className="p-0 flex flex-col overflow-hidden">
             <Button
-              as={Link}
+              as={BranchLink}
               href={`/dashboard/notas/${data.id}`}
               size="sm"
               variant="light"
@@ -37,7 +38,7 @@ const NoteCard = ({ data, handleDelete }: Props) => {
                 variant="light"
                 color="danger"
                 className="rounded-none px-8 py-5"
-                onPress={() => handleDelete(data)}
+                onPress={(e) => handleDelete(data, e.shiftKey)}
               >
                 Borrar
               </Button>

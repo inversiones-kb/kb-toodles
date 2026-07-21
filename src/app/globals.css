@@ -18,6 +18,10 @@
   --font-sans: var(--font-poppins);
 }
 
+/* * {
+  outline: 1px solid #f00;
+} */
+
 .scrollbar-gutter {
   scrollbar-gutter: stable both-edges;
 }

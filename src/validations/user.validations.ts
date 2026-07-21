@@ -1,3 +1,7 @@
+import {
+  BUSINESS_BRANCH_MAP,
+  BUSINESS_BRANCHES,
+} from "@/types/businessBranch.types";
 import { USER_ROLE_MAP } from "@/types/user.types";
 import { z } from "zod";
 
@@ -17,6 +21,7 @@ export const createUserSchema = z.object({
     .string()
     .min(1, "Debes vincular este usuario a un empleado real"),
   is_active: z.boolean().default(true),
+  branch: z.enum(BUSINESS_BRANCHES, { message: "Sucursal inválida" }),
 });
 
 export const userSchema = createUserSchema.omit({ password: true }).extend({});
@@ -32,6 +37,7 @@ export type User = z.infer<typeof userSchema> & {
   created_at: Date;
 
   role_data: (typeof USER_ROLE_MAP)["ADMIN"];
+  branch_data: (typeof BUSINESS_BRANCH_MAP)["la-fria"];
 
   is_deleted: boolean;
   deleted_at: Date | null;

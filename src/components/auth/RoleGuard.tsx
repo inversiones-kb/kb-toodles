@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { Spinner } from "@heroui/react";
 import { UserRole } from "@/types/user.types";
 import { useAuthStore } from "@/app/context/AuthProvider";
+import { useBranchRouter } from "@/hooks/useBranchRouter";
+import { BusinessBranch } from "@/types/businessBranch.types";
 
 interface RoleGuardProps {
   children: React.ReactNode;
@@ -14,14 +16,18 @@ interface RoleGuardProps {
 export default function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
   const isLoading = useAuthStore((state) => state.isLoading);
   const user = useAuthStore((state) => state.user);
-  const router = useRouter();
+  const router = useBranchRouter();
+  const nextRouter = useRouter();
+  const pathname = usePathname();
+
+  const currentBranch = useParams().branch as BusinessBranch;
 
   useEffect(() => {
     // Solo actuamos cuando Firebase haya terminado de cargar la sesión
     if (!isLoading) {
       if (!user) {
         // No está logueado
-        router.replace("/");
+        nextRouter.replace("/");
       } else if (!allowedRoles.includes(user.role)) {
         // Está logueado, pero NO tiene permiso para esta ruta.
         // Hacemos un enrutamiento inteligente según su rol real:
@@ -32,6 +38,16 @@ export default function RoleGuard({ children, allowedRoles }: RoleGuardProps) {
         } else {
           router.replace("/unauthorized"); // Ruta genérica de "Sin acceso"
         }
+      } else if (user.role === "CASHIER" && currentBranch !== user.branch) {
+        // Está logueado como cajero, pero está en la branch de url equivocada
+        // Hacemos un pathname replace a su branch real:
+
+        const newPathname = pathname.replace(
+          `/${currentBranch}`,
+          `/${user.branch}`,
+        );
+
+        nextRouter.push(newPathname);
       }
     }
   }, [isLoading, user, allowedRoles, router]);

@@ -1,12 +1,6 @@
 "use client";
 
 import {
-  createProviderSchema,
-  Provider,
-  ProviderInput,
-  ProviderOutput,
-} from "@/validations/provider.validations";
-import {
   Alert,
   Button,
   Form,
@@ -14,38 +8,28 @@ import {
   Select,
   SelectItem,
   Spinner,
-  Tooltip,
 } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import InputGroupSection from "../forms/InputGroupSection";
-import CountryPicker from "../forms/CountryPicker";
-import {
-  PROVIDER_COUNTRIES,
-  PROVIDER_COUNTRY_OPTIONS,
-  PROVIDER_TYPE_MAP,
-  PROVIDER_TYPES,
-} from "@/types/providersTypes";
 import {
   createUserSchema,
   User,
   UserInput,
   userSchema,
 } from "@/validations/user.validations";
-import useEmployees from "@/hooks/employee/useEmployees";
 import { USER_ROLE_OPTIONS, USER_ROLES } from "@/types/user.types";
-import EmptyState from "../general/EmptyState";
-import Link from "next/link";
-import {
-  IconInfoCircle,
-  IconInfoSmall,
-  IconPlus,
-  IconUserPlus,
-} from "@tabler/icons-react";
+import { IconInfoCircle, IconUserPlus } from "@tabler/icons-react";
 import { useCollectionQuery } from "@/hooks/useCollectionQuery";
 import { Employee } from "@/validations/employee.validations";
 import { transformEmployee } from "@/utils/normalizers/normalizeEmployees";
+import BranchLink from "../general/BranchLink";
+import { useParams } from "next/navigation";
+import {
+  BUSINESS_BRANCH_MAP,
+  BusinessBranch,
+} from "@/types/businessBranch.types";
 import { where } from "firebase/firestore";
 
 interface Props {
@@ -54,8 +38,15 @@ interface Props {
 }
 
 const UserForm = ({ onSubmit, initialData }: Props) => {
+  const branch = useParams().branch as BusinessBranch;
+
   const { data: employees, isLoading: employeesLoading } =
-    useCollectionQuery<Employee>("employees", [], [], transformEmployee);
+    useCollectionQuery<Employee>(
+      "employees",
+      [where("branch", "==", branch)],
+      [branch],
+      transformEmployee,
+    );
 
   const {
     watch,
@@ -69,6 +60,7 @@ const UserForm = ({ onSubmit, initialData }: Props) => {
       name: "",
       last_name: "",
       email: "",
+      branch: branch,
     },
   });
 
@@ -143,7 +135,7 @@ const UserForm = ({ onSubmit, initialData }: Props) => {
               className="mb-1 rounded-2xl"
               endContent={
                 <Button
-                  as={Link}
+                  as={BranchLink}
                   href="/dashboard/empleados/crear"
                   color="warning"
                   size="sm"
@@ -174,7 +166,7 @@ const UserForm = ({ onSubmit, initialData }: Props) => {
             {...register("role")}
             isInvalid={Boolean(errors.role?.message)}
             errorMessage={errors.role?.message}
-            items={USER_ROLE_OPTIONS}
+            items={[USER_ROLE_OPTIONS[0], USER_ROLE_OPTIONS[1]]}
           >
             {(role) => <SelectItem key={role.key}>{role.title}</SelectItem>}
           </Select>

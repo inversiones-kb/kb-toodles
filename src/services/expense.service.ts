@@ -26,7 +26,7 @@ export const createExpense = async (
     // Guardamos el documento inyectando la fecha exacta de creación
     const docRef = await addDoc(expensesRef, {
       ...data,
-      createdAt: new Date(), // Mantenemos la consistencia del formato ISO
+      created_at: new Date(), // Mantenemos la consistencia del formato ISO
       is_deleted: false,
     });
 
@@ -38,7 +38,7 @@ export const createExpense = async (
       [`total_expenses`]: increment(data.amount),
 
       // Registro de auditoría del último movimiento en el turno
-      updatedAt: new Date(),
+      updated_at: new Date(),
     });
 
     return {

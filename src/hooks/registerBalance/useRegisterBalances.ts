@@ -23,7 +23,7 @@ const useRegisterBalances = (filters: RegisterBalanceFilters) => {
       const wheres: QueryFieldFilterConstraint[] = [];
 
       if (search) {
-        wheres.push(where("employee_snapshot.name", "==", search));
+        wheres.push(where("user_snapshot.name", "==", search));
       }
 
       if (status) {

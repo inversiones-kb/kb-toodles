@@ -11,12 +11,14 @@ import { CurrentUser } from "@/types/auth.types";
 import { usePathname, useRouter } from "next/navigation";
 import { transformUser } from "@/utils/normalizers/normalizeUsers";
 import { toast } from "sonner";
+import { useBranchRouter } from "@/hooks/useBranchRouter";
 
 // 1. El contexto de React solo guardará la API de la store, no los datos reactivos directamente
 const AuthStoreContext = createContext<AuthStoreApi | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const router = useRouter();
+  const router = useBranchRouter();
+  const nextRouter = useRouter();
   const storeRef = useRef<AuthStoreApi | null>(null);
   const pathname = usePathname();
 
@@ -113,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
               if (pathname === "/") {
                 if (fullUser.role === "CASHIER") {
-                  router.replace("/cajero");
+                  nextRouter.replace(`/${fullUser.branch}/cajero`);
                 } else if (fullUser.role === "ADMIN") {
                   router.replace("/dashboard");
                 }

@@ -4,6 +4,10 @@ import { USER_ROLE_MAP, USER_ROLES } from "@/types/user.types";
 import { createFileSchema } from "./file.validations";
 import { FileMetadata } from "@/types/file.types";
 import { SHIFT_MAP, SHIFTS } from "@/types/employee.types";
+import {
+  BUSINESS_BRANCH_MAP,
+  BUSINESS_BRANCHES,
+} from "@/types/businessBranch.types";
 
 export const createEmployeeSchema = z.object({
   cv_attachment: createFileSchema(5, ["application/pdf"]), // Máximo 5MB, solo PDF
@@ -20,6 +24,8 @@ export const createEmployeeSchema = z.object({
   doc_number: z.coerce.number().min(1, "Número de documento inválido"),
   birthdate: customDateSchema,
   hired_at: customDateSchema,
+
+  branch: z.enum(BUSINESS_BRANCHES, { message: "Sucursal inválida" }),
 });
 
 export const employeeSchema = createEmployeeSchema.extend({
@@ -49,9 +55,13 @@ export type Employee = z.infer<typeof employeeSchema> & {
 
   role_data: (typeof USER_ROLE_MAP)["ADMIN"];
   shift_data: (typeof SHIFT_MAP)["AFTERNOON"];
+  branch_data: (typeof BUSINESS_BRANCH_MAP)["la-fria"];
 
   is_deleted: boolean;
   deleted_at: Date;
+
+  is_fired: boolean;
+  fired_at: Date;
 
   cv_attachment: FileMetadata;
   rif_attachment: FileMetadata;

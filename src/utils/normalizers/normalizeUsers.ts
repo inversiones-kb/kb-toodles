@@ -1,3 +1,4 @@
+import { BUSINESS_BRANCH_MAP } from "@/types/businessBranch.types";
 import { USER_ROLE_MAP } from "@/types/user.types";
 import { User } from "@/validations/user.validations";
 import { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
@@ -15,6 +16,9 @@ export function transformUser(
     email: data.email,
     employee_id: data.employee_id,
     is_active: data.is_active,
+    branch: data.branch,
+    branch_data:
+      BUSINESS_BRANCH_MAP[data.branch as keyof typeof BUSINESS_BRANCH_MAP],
     role: data.role,
     role_data: USER_ROLE_MAP[data.role as keyof typeof USER_ROLE_MAP],
     created_at: data.created_at.toDate(),

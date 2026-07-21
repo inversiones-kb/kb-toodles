@@ -1,3 +1,4 @@
+import { BUSINESS_BRANCH_MAP } from "@/types/businessBranch.types";
 import { SHIFT_MAP } from "@/types/employee.types";
 import { USER_ROLE_MAP } from "@/types/user.types";
 import { Employee } from "@/validations/employee.validations";
@@ -22,6 +23,11 @@ export function transformEmployee(
     photo: data.photo,
     role: data.role,
     salary: data.salary,
+    branch: data.branch,
+    is_fired: data.is_fired,
+    fired_at: data.fired_at ? data.fired_at.toDate() : null,
+    branch_data:
+      BUSINESS_BRANCH_MAP[data.branch as keyof typeof BUSINESS_BRANCH_MAP],
     cv_attachment: data.cv_attachment,
     rif_attachment: data.rif_attachment,
     address: data.address,

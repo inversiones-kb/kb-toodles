@@ -16,6 +16,7 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  PressEvent,
 } from "@heroui/react";
 import React, { useState } from "react";
 
@@ -32,16 +33,16 @@ export interface BaseTableProps<T> {
   renderCell?: (
     item: T,
     columnKey: React.Key,
-    handleDelete: (item: T) => void,
+    handleDelete: (item: T, e: PressEvent) => void,
   ) => React.ReactNode;
-  onDeleteAction?: (id: string) => Promise<void>;
+  onDeleteAction?: (id: string, hardDelete?: boolean) => Promise<void>;
   emptyContent?: string;
   isLoading?: boolean;
   topContent?: React.ReactNode;
 }
 
 // Usamos <T extends { id: string }> porque HeroUI necesita un ID único para cada fila
-export default function BaseTable<T extends { id: string }>({
+export default function BaseTable<T extends { id: string; name?: string }>({
   columns,
   data,
   renderCell,
@@ -53,24 +54,34 @@ export default function BaseTable<T extends { id: string }>({
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   // Estado para saber a quién vamos a eliminar
-  const [selectedItem, setSelectedItem] = useState<T | null>(null);
+  const [deleteContext, setDeleteContext] = useState<{
+    id: string | null;
+    isHardDelete: boolean;
+    name?: string | null;
+  }>({ id: null, isHardDelete: false });
+
   const [isDeleting, setIsDeleting] = useState(false);
 
   // 1. Interceptamos el clic en la fila
-  const handlePreDelete = (item: T) => {
-    setSelectedItem(item);
+  const handlePreDelete = (item: T, e: PressEvent) => {
+    setDeleteContext({
+      id: item.id,
+      name: item?.name,
+      isHardDelete: e.shiftKey,
+    });
+
     onOpen();
   };
 
   // 2. Ejecutamos la acción final
   const handleConfirmDelete = async () => {
-    if (!selectedItem || !onDeleteAction) return;
+    if (!deleteContext.id || !onDeleteAction) return;
 
     setIsDeleting(true);
     try {
       // Aquí llamas a tu servicio de Firebase o Server Action
       // await deleteUser(selectedItem.id);
-      await onDeleteAction(selectedItem.id);
+      await onDeleteAction(deleteContext.id, deleteContext.isHardDelete);
 
       // Lógica extra: actualizar el estado local para quitar la fila de la vista
       onClose();
@@ -78,21 +89,41 @@ export default function BaseTable<T extends { id: string }>({
       console.error("Error al eliminar:", error);
     } finally {
       setIsDeleting(false);
-      setSelectedItem(null); // Limpiamos el buffer
+      setDeleteContext({ id: null, isHardDelete: false }); // Limpiamos el buffer
     }
   };
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        backdrop={deleteContext.isHardDelete ? "blur" : "opaque"}
+        classNames={
+          deleteContext.isHardDelete
+            ? {
+                backdrop: "bg-danger/10",
+                base: "border-danger/20 border text-soft-light",
+
+                header: "bg-danger/30 text-light",
+
+                /* closeButton: "hover:bg-white/5 active:bg-white/10", */
+              }
+            : undefined
+        }
+      >
         <ModalContent>
-          <ModalHeader>Confirmar Eliminación</ModalHeader>
+          <ModalHeader>
+            {deleteContext.isHardDelete
+              ? "Eliminar permanentemente"
+              : "Confirmar Eliminación"}
+          </ModalHeader>
           <ModalBody>
-            {selectedItem && Object.hasOwn(selectedItem, "name") ? (
+            {deleteContext.name ? (
               <p>
                 ¿Estás seguro de que deseas eliminar a{" "}
-                <strong>{(selectedItem as any).name}</strong>? Esta acción no se
-                puede deshacer.
+                <strong>{deleteContext.name}</strong>? Esta acción no se puede
+                deshacer.
               </p>
             ) : (
               <p>
@@ -120,13 +151,21 @@ export default function BaseTable<T extends { id: string }>({
         aria-label="Tabla de datos genérica"
         selectionMode="multiple"
         classNames={{
-          th: "bg-layer-3",
-          wrapper: "h-full bg-layer-2 p-2",
-          tr: "*:hover:before:!bg-layer-3",
+          wrapper: "p-0 bg-trasparent h-full",
+
+          th: "bg-layer-3 whitespace-nowrap px-4",
+
+          table: "w-full min-w-max overflow-x-auto",
+          base: "w-full",
+
+          tr: "*:hover:before:!bg-layer-3 min-w-max",
+          td: "min-w-max whitespace-nowrap px-4",
+
+          tbody: "min-w-max",
         }}
         topContent={topContent}
         topContentPlacement="outside"
-        removeWrapper={true}
+        /* removeWrapper={true} */
         isHeaderSticky
       >
         <TableHeader columns={columns}>

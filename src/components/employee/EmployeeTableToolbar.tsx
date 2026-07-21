@@ -11,6 +11,7 @@ import {
   RangeValue,
   Select,
   SelectItem,
+  Switch,
 } from "@heroui/react";
 import DateRangePicker from "@/components/forms/DateRangePicker";
 import { IconAdjustmentsHorizontal, IconSearch } from "@tabler/icons-react";
@@ -23,11 +24,13 @@ import { z } from "zod";
 import useDebounce from "@/hooks/useDebounce";
 import { createEmployeeSchema } from "@/validations/employee.validations";
 import { USER_ROLE_MAP, USER_ROLE_OPTIONS } from "@/types/user.types";
+import { SHIFT_MAP, SHIFT_OPTIONS } from "@/types/employee.types";
 
 const validationSchema = createEmployeeSchema
-  .pick({ role: true })
+  .pick({ role: true, shift: true })
   .extend({
     search: z.string().optional(),
+    showFired: z.boolean().default(false),
 
     dateRange: z.custom<RangeValue<DateValue>>(),
   })
@@ -73,7 +76,7 @@ const EmployeeTableToolbar = ({
     <Form
       id="providers-filters"
       onSubmit={handleSubmit(onSubmit)}
-      className="flex flex-row items-center gap-2"
+      className="flex flex-row items-center gap-2 sticky left-0"
     >
       <Controller
         name="search"
@@ -147,6 +150,45 @@ const EmployeeTableToolbar = ({
                   <SelectItem key={option.key}>{option.title}</SelectItem>
                 ))}
               </Select>
+
+              <Select
+                isClearable
+                variant="bordered"
+                color="secondary"
+                size="sm"
+                selectionMode="single"
+                radius="lg"
+                selectedKeys={[watch("shift") || ""]}
+                label="Turno"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setValue(
+                    "shift",
+                    value === ""
+                      ? undefined
+                      : (value as keyof typeof SHIFT_MAP),
+                  );
+                }}
+                errorMessage={errors.shift?.message}
+                isInvalid={Boolean(errors.shift?.message)}
+              >
+                {SHIFT_OPTIONS.map((option) => (
+                  <SelectItem key={option.key}>{option.title}</SelectItem>
+                ))}
+              </Select>
+
+              <Switch
+                classNames={{
+                  label: "text-sm font-medium",
+                  base: "max-w-none",
+                }}
+                isSelected={watch("showFired")}
+                onValueChange={(value) => {
+                  setValue("showFired", value);
+                }}
+              >
+                Mostrar despedidos
+              </Switch>
 
               <Button
                 color="secondary"

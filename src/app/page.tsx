@@ -19,6 +19,7 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 import { useAuthStore } from "./context/AuthProvider";
+import { useBranchRouter } from "@/hooks/useBranchRouter";
 
 export default function HomePage() {
   const {
@@ -37,7 +38,7 @@ export default function HomePage() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const router = useBranchRouter();
   const user = useAuthStore((store) => store.user);
 
   const onSubmit = async (data: LoginInput) => {

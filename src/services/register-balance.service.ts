@@ -12,9 +12,9 @@ import { DeepPartial } from "react-hook-form";
 export const openRegisterBalance = async (
   data: Pick<
     RegisterBalanceInput,
-    "status" | "checkout_number" | "total_expenses"
+    "status" | "checkout_number" | "total_expenses" | "branch"
   > &
-    Pick<RegisterBalance, "employee_snapshot" | "user_id">,
+    Pick<RegisterBalance, "user_snapshot" | "user_id">,
 ): Promise<CustomApiResponse> => {
   const coll = collection(db, "register_balances");
   try {
@@ -41,9 +41,7 @@ export const openRegisterBalance = async (
 };
 
 export const createRegisterBalance = async (
-  data: RegisterBalanceInput & {
-    employee_snapshot: Pick<Employee, "name" | "last_name" | "id" | "role">;
-  },
+  data: RegisterBalanceInput & Pick<RegisterBalance, "user_snapshot">,
 ): Promise<CustomApiResponse> => {
   const coll = collection(db, "register_balances");
   try {
@@ -77,7 +75,7 @@ export const updateRegisterBalance = async (
     // 2. Ejecutamos la actualización inyectando automáticamente la fecha de modificación
     await updateDoc(shiftRef, {
       ...data,
-      updatedAt: new Date(), // Rastro de auditoría indispensable
+      updated_at: new Date(), // Rastro de auditoría indispensable
     });
 
     return {

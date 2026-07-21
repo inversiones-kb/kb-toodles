@@ -14,6 +14,6 @@ export interface UserDocument {
   role: UserRole;
   employee_id: string; // Llave foránea (Foreign Key) hacia la colección 'employees'
   isActive: boolean; // Interruptor de acceso inmediato
-  createdAt: string; // Fecha de creación del usuario en el sistema
-  updatedAt: string; // Fecha de la última modificación (ej: cambio de rol)
+  created_at: string; // Fecha de creación del usuario en el sistema
+  updated_at: string; // Fecha de la última modificación (ej: cambio de rol)
 }

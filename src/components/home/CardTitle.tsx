@@ -3,6 +3,7 @@ import { Icon, IconArrowNarrowLeft } from "@tabler/icons-react";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@heroui/react";
 import clsx from "clsx";
+import { useBranchRouter } from "@/hooks/useBranchRouter";
 interface IProps {
   title: string;
   Icon?: Icon;
@@ -18,7 +19,7 @@ const CardTitle = ({
   endContent,
   loadingProgress = 0,
 }: IProps) => {
-  const router = useRouter();
+  const router = useBranchRouter();
   const pathname = usePathname();
 
   return (
