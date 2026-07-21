@@ -1,4 +1,3 @@
-import { NewProviderFields, Provider } from "@/types/providersTypes";
 import { db } from "@/firebaseConfig";
 import { collection, addDoc } from "firebase/firestore";
 import { CustomApiResponse } from "@/types/coreTypes";
@@ -6,7 +5,7 @@ import { API_MESSAGES } from "@/utils/apiUtils";
 import { NewInventoryAuditFields } from "@/types/inventoryAuditsTypes";
 
 export const handleNewInventoryAudit = async (
-  data: NewInventoryAuditFields
+  data: NewInventoryAuditFields,
 ): Promise<CustomApiResponse> => {
   console.log(data);
 

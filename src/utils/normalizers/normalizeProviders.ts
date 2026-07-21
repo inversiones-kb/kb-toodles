@@ -23,22 +23,3 @@ export function transformProvider(
     deleted_at: data.deleted_at ? data.deleted_at.toDate() : null,
   };
 }
-
-export function normalizeProviders(
-  docs: QueryDocumentSnapshot<DocumentData, DocumentData>[],
-): Provider[] {
-  return docs.map((doc) => {
-    const data = doc.data();
-
-    return {
-      id: doc.id,
-      name: doc.data().name,
-      country:
-        PROVIDER_COUNTRY_MAP[data.country as keyof typeof PROVIDER_COUNTRY_MAP],
-      type: doc.data().type,
-      created_at: doc.data().created_at.toDate(),
-      is_deleted: data.is_deleted,
-      deleted_at: data.deleted_at,
-    };
-  });
-}

@@ -1,28 +1,20 @@
 "use client";
 
 import CardTitle from "@/components/home/CardTitle";
-import HomeOrderCard from "@/components/home/HomeOrderCard";
 import {
-  IconBabyCarriage,
   IconCashRegister,
   IconConfetti,
   IconInvoice,
   IconNote,
   IconUserDollar,
 } from "@tabler/icons-react";
-import MOCK_ORDERS from "@/data/mock/orders_mock";
-import HomeDebtCard from "@/components/home/HomeDebtCard";
-import MOCK_DEBTS from "@/data/mock/debts_mock";
-import { Currency } from "@/types/unionTypes";
 import HomeNoteCard from "@/components/home/HomeNoteCard";
-import MOCK_NOTES from "@/data/mock/notes_mock";
 import HomeClockCard from "@/components/home/HomeClockCard";
 import { useCollectionQuery } from "@/hooks/useCollectionQuery";
 import { Note } from "@/validations/note.validations";
 import { useAuthStore } from "../../context/AuthProvider";
 import { Button, Spinner } from "@heroui/react";
 import EmptyState from "@/components/general/EmptyState";
-import Link from "next/link";
 import HomeNextSeasonCard from "@/components/home/HomeNextSeasonCard";
 import BranchLink from "@/components/general/BranchLink";
 import SalesChart from "@/components/home/SalesChart";

@@ -16,18 +16,14 @@ import DateRangePicker from "@/components/forms/DateRangePicker";
 import { IconAdjustmentsHorizontal, IconSearch } from "@tabler/icons-react";
 import React, { Dispatch, SetStateAction, useState } from "react";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { DateRange } from "@/types/coreTypes";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import useDebounce from "@/hooks/useDebounce";
-import { createEmployeeSchema } from "@/validations/employee.validations";
-import { USER_ROLE_MAP, USER_ROLE_OPTIONS } from "@/types/user.types";
 import { createRegisterBalanceSchema } from "@/validations/registerBalance.validations";
 import {
   REGISTER_BALANCE_STATUS_MAP,
   REGISTER_BALANCE_STATUS_OPTIONS,
-  REGISTER_BALANCE_STATUSES,
 } from "@/types/registerBalance.types";
 
 const validationSchema = createRegisterBalanceSchema

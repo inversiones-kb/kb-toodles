@@ -7,9 +7,7 @@ import { ReactNode } from "react";
 
 interface BranchLayoutProps {
   children: ReactNode;
-  params: {
-    branch: string;
-  };
+  params: Promise<any>;
 }
 
 export default async function BranchLayout({

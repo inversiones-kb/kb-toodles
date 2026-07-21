@@ -6,9 +6,9 @@ import {
 } from "firebase/firestore";
 import { getDocs, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { normalizeProviders } from "@/utils/normalizers/normalizeProviders";
 import { ProviderFilters } from "@/components/provider/ProviderTableToolbar";
 import { Provider } from "@/validations/provider.validations";
+import { transformProvider } from "@/utils/normalizers/normalizeProviders";
 
 const useProviders = (filters: ProviderFilters) => {
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -36,7 +36,7 @@ const useProviders = (filters: ProviderFilters) => {
       const qCollection = collection(db, "providers");
       const q = query(qCollection, ...wheres);
       const querySnapshot = await getDocs(q);
-      const data = normalizeProviders(querySnapshot.docs);
+      const data = querySnapshot.docs.map((doc) => transformProvider(doc));
       setProviders(data);
       setIsLoading(false);
     };

@@ -74,7 +74,6 @@ export const useCollectionQuery = <T,>(
 
     fetchDocuments();
     // En lugar de escuchar los objetos 'constraints', escuchamos el array de dependencias primitivas del usuario
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...deps, collectionName, tick]);
 
   return { data, isLoading, error, refetch };

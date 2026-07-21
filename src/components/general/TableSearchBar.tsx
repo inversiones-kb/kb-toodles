@@ -9,19 +9,15 @@ import {
   SelectItem,
 } from "@heroui/react";
 import DateRangePicker from "@/components/forms/DateRangePicker";
-import {
-  IconAdjustmentsHorizontal,
-  IconChevronDown,
-  IconSearch,
-} from "@tabler/icons-react";
+import { IconAdjustmentsHorizontal, IconSearch } from "@tabler/icons-react";
 import React, { Dispatch, SetStateAction, useRef, useState } from "react";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { DateRange } from "@/types/coreTypes";
 import CountryPicker from "../forms/CountryPicker";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { NewProviderFields, ProviderType } from "@/types/providersTypes";
+
 import useDebounce from "@/hooks/useDebounce";
 import { ProviderFilters } from "../provider/ProviderTableToolbar";
 
@@ -123,7 +119,6 @@ const TableSearchBar = ({ filters, setFilters }: TableSearchBarProps) => {
                 color="secondary"
                 size="sm"
                 radius="lg"
-                defaultSelectedKeys={[watch("type")]}
                 disallowEmptySelection
                 label="Tipo de proveedor"
                 {...register("type")}
@@ -139,7 +134,6 @@ const TableSearchBar = ({ filters, setFilters }: TableSearchBarProps) => {
                 errorMessage={errors.country?.message}
                 label="País"
                 showNullCountry={true}
-                defaultSelectedKeys={[watch("country")]}
                 {...register("country")}
               />
 
