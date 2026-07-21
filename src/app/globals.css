@@ -26,7 +26,6 @@
   scrollbar-gutter: stable both-edges;
 }
 
-/* width */
 ::-webkit-scrollbar {
   width: 5px;
 }
