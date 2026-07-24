@@ -1,38 +1,56 @@
-import { data } from "framer-motion/client";
-import React from "react";
+import { useAuthStore } from "@/app/context/AuthProvider";
+import { useCollectionQuery } from "@/hooks/useCollectionQuery";
+import { BusinessBranch } from "@/types/businessBranch.types";
+import { generateSalesChartData } from "@/utils/stats.utils";
+import { RegisterBalance } from "@/validations/registerBalance.validations";
+import { Spinner } from "@heroui/react";
+import { where } from "firebase/firestore";
+import { useParams } from "next/navigation";
+import React, { useMemo } from "react";
 import {
   Area,
   AreaChart,
   CartesianGrid,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
+import EmptyState from "../general/EmptyState";
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-default-50 border border-default-200 p-3 rounded-lg shadow-md">
+        <p className="text-default-500 text-sm mb-1">{label}</p>
+        <p className="text-primary font-bold text-lg">
+          ${payload[0].value.toLocaleString()}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
 
 const SalesChart = () => {
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-default-50 border border-default-200 p-3 rounded-lg shadow-md">
-          <p className="text-default-500 text-sm mb-1">{label}</p>
-          <p className="text-primary font-bold text-lg">
-            ${payload[0].value.toLocaleString()}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+  const user = useAuthStore((store) => store.user);
+  const branch = useParams().branch as BusinessBranch;
 
-  const data = [
-    { name: "Jan", sales: 4000, profit: 2400 },
-    { name: "Feb", sales: 3000, profit: 1398 },
-    { name: "Mar", sales: 2000, profit: 9800 },
-    { name: "Apr", sales: 2780, profit: 3908 },
-    { name: "May", sales: 1890, profit: 4800 },
-    { name: "Jun", sales: 2390, profit: 3800 },
-  ];
+  const { data, isLoading } = useCollectionQuery<RegisterBalance>(
+    "register_balances",
+    [where("branch", "==", branch), where("status", "==", "CHECKED")],
+    [user?.id],
+  );
+
+  const salesData = useMemo(() => generateSalesChartData(data), [data]);
+
+  if (isLoading)
+    return (
+      <div className="w-full justify-center h-full items-center flex">
+        <Spinner label="Cargando ventas..." />
+      </div>
+    );
+
+  if (!data.length) return <EmptyState title="No hay ventas para mostrar" />;
 
   /*
    <ResponsiveContainer width={"100%"} height={"100%"}>
@@ -43,7 +61,7 @@ const SalesChart = () => {
     <AreaChart
       className="w-full h-full overflow-hidden"
       responsive
-      data={data}
+      data={salesData}
       margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
     >
       <defs>
@@ -67,7 +85,7 @@ const SalesChart = () => {
 
       <Area
         type="monotone"
-        dataKey="sales"
+        dataKey="total"
         stroke="#ea2778"
         fillOpacity={1}
         fill="url(#colorSales)"

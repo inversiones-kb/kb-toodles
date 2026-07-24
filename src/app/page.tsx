@@ -1,23 +1,12 @@
 "use client";
 
-import CountryPicker from "@/components/forms/CountryPicker";
-import InputGroupSection from "@/components/forms/InputGroupSection";
 import { loginWithEmailAndPassword } from "@/services/auth.service";
-import { createProvider } from "@/services/provider.service";
 import { LoginInput, loginSchema } from "@/validations/auth.validations";
-import {
-  createProviderSchema,
-  ProviderInput,
-  ProviderOutput,
-} from "@/validations/provider.validations";
-import { Button, Form, Input, Select } from "@heroui/react";
+import { Button, Form, Input } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { IconMail } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import * as z from "zod";
 import { useAuthStore } from "./context/AuthProvider";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
 

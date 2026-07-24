@@ -24,6 +24,7 @@ import DragDropUploader from "../forms/DragDropUploader";
 import { SHIFT_OPTIONS, SHIFTS } from "@/types/employee.types";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
 import { BUSINESS_BRANCH_MAP } from "@/types/businessBranch.types";
+import { util } from "zod";
 
 interface Props {
   onSubmit: SubmitHandler<EmployeeInput>;
@@ -39,6 +40,16 @@ const EmployeeForm = ({
 }: Props) => {
   const branch = useParams().branch as keyof typeof BUSINESS_BRANCH_MAP;
 
+  let omit: util.Exactly<
+    {
+      [k in keyof EmployeeInput]?: true;
+    },
+    {}
+  > = {};
+
+  if (initialData?.cv_attachment) omit["cv_attachment"] = true;
+  if (initialData?.rif_attachment) omit["rif_attachment"] = true;
+
   const {
     watch,
     setValue,
@@ -48,12 +59,7 @@ const EmployeeForm = ({
     formState: { errors, isSubmitting },
   } = useForm<EmployeeInput>({
     resolver: zodResolver(
-      initialData
-        ? createEmployeeSchema.omit({
-            cv_attachment: true,
-            rif_attachment: true,
-          })
-        : createEmployeeSchema,
+      initialData ? createEmployeeSchema.omit(omit) : createEmployeeSchema,
     ),
     defaultValues: initialData
       ? {
@@ -69,6 +75,7 @@ const EmployeeForm = ({
           role: initialData.role,
           salary: initialData.salary,
           email: initialData.email,
+          phone: initialData.phone,
           address: initialData.address,
           branch: initialData.branch,
         }
@@ -95,37 +102,38 @@ const EmployeeForm = ({
           Completa el formulario
         </h2>
 
-        {!initialData ? (
-          <>
-            <Controller
-              name="cv_attachment"
-              control={control}
-              render={({ field }) => (
-                <DragDropUploader
-                  label="Hoja de Vida (CV)"
-                  maxSizeMB={5}
-                  acceptedTypes={["application/pdf"]}
-                  currentFile={field.value}
-                  onFileSelect={field.onChange} // Actualiza el estado del form directamente
-                  errorMessage={errors.cv_attachment?.message as string}
-                />
-              )}
-            />
-            <Controller
-              name="rif_attachment"
-              control={control}
-              render={({ field }) => (
-                <DragDropUploader
-                  label="Registro de Información Fiscal (RIF)"
-                  maxSizeMB={5}
-                  acceptedTypes={["application/pdf"]}
-                  currentFile={field.value}
-                  onFileSelect={field.onChange} // Actualiza el estado del form directamente
-                  errorMessage={errors.rif_attachment?.message as string}
-                />
-              )}
-            />
-          </>
+        {!initialData?.cv_attachment ? (
+          <Controller
+            name="cv_attachment"
+            control={control}
+            render={({ field }) => (
+              <DragDropUploader
+                label="Hoja de Vida (CV)"
+                maxSizeMB={5}
+                acceptedTypes={["application/pdf"]}
+                currentFile={field.value}
+                onFileSelect={field.onChange} // Actualiza el estado del form directamente
+                errorMessage={errors.cv_attachment?.message as string}
+              />
+            )}
+          />
+        ) : null}
+
+        {!initialData?.rif_attachment ? (
+          <Controller
+            name="rif_attachment"
+            control={control}
+            render={({ field }) => (
+              <DragDropUploader
+                label="Registro de Información Fiscal (RIF)"
+                maxSizeMB={5}
+                acceptedTypes={["application/pdf"]}
+                currentFile={field.value}
+                onFileSelect={field.onChange} // Actualiza el estado del form directamente
+                errorMessage={errors.rif_attachment?.message as string}
+              />
+            )}
+          />
         ) : null}
 
         <InputGroupSection title="Datos de identidad">
@@ -170,6 +178,16 @@ const EmployeeForm = ({
               {...register("address")}
             />
           </div>
+
+          <Input
+            label="Teléfono"
+            variant="bordered"
+            size="sm"
+            radius="lg"
+            isInvalid={Boolean(errors.phone?.message)}
+            errorMessage={errors.phone?.message}
+            {...register("phone")}
+          />
 
           <div className="flex gap-2">
             <Select

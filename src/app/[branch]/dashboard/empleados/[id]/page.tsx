@@ -37,20 +37,70 @@ import { Employee, EmployeeInput } from "@/validations/employee.validations";
 import { updateEmployee } from "@/services/employee.service";
 import EmployeeForm from "@/components/employee/EmployeeForm";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
+import { FileMetadata } from "@/types/file.types";
+import { uploadFileToStorage } from "@/services/storage.service";
 
 export default function UpdateEmployeePage() {
   const router = useBranchRouter();
   const { id } = useParams();
 
   const [formLoading, setFormLoading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const { data, isLoading } = useDoc<Employee>("employees", id?.toString());
+  const { data: initialData, isLoading } = useDoc<Employee>(
+    "employees",
+    id?.toString(),
+  );
 
   const onSubmit = async (data: EmployeeInput) => {
     if (!id) return toast.warning("Empleado no encontrado");
     setFormLoading(true);
 
-    const res = await updateEmployee(id.toString(), data);
+    const progressMap = { cv: 0, rif: 0 };
+    let amountOfFiles = [data.cv_attachment, data.rif_attachment].filter(
+      (e) => e !== undefined,
+    ).length;
+
+    const updateGlobalProgress = () => {
+      // Promediamos los valores (suma de ambos / 2)
+      const totalProgress = (progressMap.cv + progressMap.rif) / amountOfFiles;
+      setUploadProgress(totalProgress);
+    };
+    let cvMetadata: FileMetadata | null = null;
+    let rifMetadata: FileMetadata | null = null;
+
+    if (data.cv_attachment) {
+      cvMetadata = await uploadFileToStorage(
+        data.cv_attachment,
+        "employees/cvs",
+        (progress) => {
+          progressMap.cv = progress;
+          updateGlobalProgress();
+        },
+      );
+    }
+
+    if (data.rif_attachment) {
+      rifMetadata = await uploadFileToStorage(
+        data.rif_attachment,
+        "employees/rifs",
+        (progress) => {
+          progressMap.rif = progress;
+          updateGlobalProgress();
+        },
+      );
+    }
+
+    let updateData = {
+      ...data,
+      cv_attachment: initialData?.cv_attachment,
+      rif_attachment: initialData?.rif_attachment,
+    };
+
+    if (cvMetadata) updateData["cv_attachment"] = cvMetadata;
+    if (rifMetadata) updateData["rif_attachment"] = rifMetadata;
+
+    const res = await updateEmployee(id.toString(), updateData);
 
     setFormLoading(false);
 
@@ -83,8 +133,8 @@ export default function UpdateEmployeePage() {
         />
 
         {isLoading ? <Spinner /> : null}
-        {!isLoading && data ? (
-          <EmployeeForm initialData={data} onSubmit={onSubmit} />
+        {!isLoading && initialData ? (
+          <EmployeeForm initialData={initialData} onSubmit={onSubmit} />
         ) : null}
       </section>
     </main>

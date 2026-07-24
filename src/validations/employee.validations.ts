@@ -10,14 +10,15 @@ import {
 } from "@/types/businessBranch.types";
 
 export const createEmployeeSchema = z.object({
-  cv_attachment: createFileSchema(5, ["application/pdf"]), // Máximo 5MB, solo PDF
-  rif_attachment: createFileSchema(5, ["application/pdf"]), // Máximo 5MB, solo PDF
+  cv_attachment: createFileSchema(5, ["application/pdf"]).optional(), // Máximo 5MB, solo PDF
+  rif_attachment: createFileSchema(5, ["application/pdf"]).optional(), // Máximo 5MB, solo PDF
 
   name: z.string().min(1, "Campo obligatorio"),
   last_name: z.string().min(1, "Campo obligatorio"),
   email: z.string().email("Correo inválido"),
   shift: z.enum(SHIFTS, { message: "Turno inválido" }),
   address: z.string().min(1, "Dirección inválida"),
+  phone: z.string().min(1, "Teléfono inválido"),
   role: z.enum(USER_ROLES, { message: "Rol inválido" }),
   salary: z.coerce.number().min(1, "El mínimo es 1"),
   doc_type: z.enum(["V", "J", "E"]),
@@ -50,7 +51,10 @@ export const employeeSchema = createEmployeeSchema.extend({
 export type EmployeeInput = z.input<typeof createEmployeeSchema>;
 export type EmployeeOutput = z.output<typeof createEmployeeSchema>;
 
-export type Employee = z.infer<typeof employeeSchema> & {
+export type Employee = Omit<
+  z.infer<typeof employeeSchema>,
+  "cv_attachment" | "rif_attachment"
+> & {
   id: string;
 
   role_data: (typeof USER_ROLE_MAP)["ADMIN"];
@@ -63,6 +67,6 @@ export type Employee = z.infer<typeof employeeSchema> & {
   is_fired: boolean;
   fired_at: Date;
 
-  cv_attachment: FileMetadata;
-  rif_attachment: FileMetadata;
+  cv_attachment: FileMetadata | null;
+  rif_attachment: FileMetadata | null;
 };

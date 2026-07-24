@@ -114,6 +114,9 @@ export default function EmployeesPage() {
           </Chip>
         );
       case "cv":
+        if (!item.cv_attachment)
+          return <p className="text-sm text-soft-light">Sin asignar</p>;
+
         return (
           <HeroUILink
             href={item.cv_attachment.url}
@@ -127,6 +130,9 @@ export default function EmployeesPage() {
           </HeroUILink>
         );
       case "rif":
+        if (!item.rif_attachment)
+          return <p className="text-sm text-soft-light">Sin asignar</p>;
+
         return (
           <HeroUILink
             href={item.rif_attachment.url}

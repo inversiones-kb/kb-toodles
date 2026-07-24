@@ -17,6 +17,7 @@ import EmployeeForm from "@/components/employee/EmployeeForm";
 import { uploadFileToStorage } from "@/services/storage.service";
 import { Button, Progress } from "@heroui/react";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
+import { FileMetadata } from "@/types/file.types";
 
 export default function CreateEmployeePage() {
   const router = useBranchRouter();
@@ -27,30 +28,40 @@ export default function CreateEmployeePage() {
     setFormLoading(true);
 
     const progressMap = { cv: 0, rif: 0 };
+    let amountOfFiles = [data.cv_attachment, data.rif_attachment].filter(
+      (e) => e !== undefined,
+    ).length;
 
     const updateGlobalProgress = () => {
       // Promediamos los valores (suma de ambos / 2)
-      const totalProgress = (progressMap.cv + progressMap.rif) / 2;
+      const totalProgress = (progressMap.cv + progressMap.rif) / amountOfFiles;
       setUploadProgress(totalProgress);
     };
 
-    const cvMetadata = await uploadFileToStorage(
-      data.cv_attachment,
-      "employees/cvs",
-      (progress) => {
-        progressMap.cv = progress;
-        updateGlobalProgress();
-      },
-    );
+    let cvMetadata: FileMetadata | null = null;
+    let rifMetadata: FileMetadata | null = null;
 
-    const rifMetadata = await uploadFileToStorage(
-      data.rif_attachment,
-      "employees/rifs",
-      (progress) => {
-        progressMap.rif = progress;
-        updateGlobalProgress();
-      },
-    );
+    if (data.cv_attachment) {
+      cvMetadata = await uploadFileToStorage(
+        data.cv_attachment,
+        "employees/cvs",
+        (progress) => {
+          progressMap.cv = progress;
+          updateGlobalProgress();
+        },
+      );
+    }
+
+    if (data.rif_attachment) {
+      rifMetadata = await uploadFileToStorage(
+        data.rif_attachment,
+        "employees/rifs",
+        (progress) => {
+          progressMap.rif = progress;
+          updateGlobalProgress();
+        },
+      );
+    }
 
     const res = await createEmployee({
       ...data,
