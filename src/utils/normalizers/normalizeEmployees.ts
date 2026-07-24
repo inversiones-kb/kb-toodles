@@ -11,6 +11,7 @@ export function transformEmployee(
 
   return {
     id: doc.id,
+    phone: data.phone,
     doc_number: data.doc_number,
     doc_type: data.doc_type,
     files: data.files,
