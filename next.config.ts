@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["jwks-rsa", "jose"],
-  /* config options here */
+  serverExternalPackages: ["firebase-admin"],
 };
 
 export default nextConfig;
