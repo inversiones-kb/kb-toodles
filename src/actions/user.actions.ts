@@ -160,6 +160,8 @@ export async function migrateCashierPasswords() {
 
       // 🔥 REGLA DE FIREBASE: Las contraseñas deben ser strings de mínimo 6 caracteres.
       // Si guardas la cédula como número, hay que convertirla a string.
+
+      console.log(`Password for ${employee.data()?.email}: ${docNumber}`);
       const newPassword = String(docNumber).trim();
 
       if (newPassword.length < 6) {

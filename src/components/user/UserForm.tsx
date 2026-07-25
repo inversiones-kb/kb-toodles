@@ -68,22 +68,14 @@ const UserForm = ({ onSubmit, initialData }: Props) => {
   useEffect(() => {
     if (!employeesLoading && employees.length && !initialData) {
       const first = employees[0];
-      /*   setValue("employee_id", first.id);
+      setValue("employee_id", first.id);
       setValue("name", first.name);
       setValue("last_name", first.last_name);
-      setValue("password", first.doc_number.toString()); */
-
-      reset({
-        branch,
-        employee_id: first.id,
-        name: first.name,
-        last_name: first.last_name,
-        password: first.doc_number.toString(),
-      });
+      setValue("password", first.doc_number.toString());
     }
   }, [employeesLoading]);
 
-  console.log(watch("password"));
+  console.log(watch("employee_id"));
 
   /* const selectedEmployee = employees.find((e) => e.id === watch("employee_id")); */
 
@@ -130,6 +122,7 @@ const UserForm = ({ onSubmit, initialData }: Props) => {
                 );
                 if (!selected) return;
 
+                setValue("employee_id", selected.id);
                 setValue("name", selected.name);
                 setValue("last_name", selected?.last_name);
                 setValue("password", selected?.doc_number.toString());
