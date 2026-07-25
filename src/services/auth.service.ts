@@ -1,13 +1,15 @@
-import { auth } from "@/firebaseConfig";
+import { auth, db } from "@/firebaseConfig";
 import { CustomApiResponse } from "@/types/coreTypes";
 import { API_MESSAGES } from "@/utils/apiUtils";
 import { LoginInput } from "@/validations/auth.validations";
+import { User } from "@/validations/user.validations";
 import {
   browserSessionPersistence,
   setPersistence,
   signInWithEmailAndPassword,
   signOut,
 } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 /**
  * Inicia sesión utilizando las credenciales de correo y contraseña provistas por el formulario.
@@ -26,13 +28,18 @@ export const loginWithEmailAndPassword = async (
       data.password,
     );
 
+    const user = await getDoc(doc(db, "users", userCredential.user.uid));
+
+    if (!user)
+      return {
+        success: false,
+        message: "Ocurrió un error inesperado al iniciar sesión.",
+      };
+
     // Retornamos los datos esenciales del usuario autenticado
     return {
       success: true,
-      data: {
-        uid: userCredential.user.uid,
-        email: userCredential.user.email,
-      },
+      data: { id: user.id, ...user.data() },
       message: API_MESSAGES.login.success,
     };
   } catch (error: any) {

@@ -12,9 +12,22 @@ import { useBranchRouter } from "@/hooks/useBranchRouter";
 import { useBasicUsers } from "@/hooks/users/useBasicUsers";
 import { IconArrowNarrowLeft, IconUsers } from "@tabler/icons-react";
 import clsx from "clsx";
+import { useCollectionQuery } from "@/hooks/useCollectionQuery";
+import { User } from "@/validations/user.validations";
+import { where } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
-  const { data: users, isLoading: usersIsLoading } = useBasicUsers();
+  const { data: users, isLoading: usersIsLoading } = useCollectionQuery<User>(
+    "users",
+    [
+      where("is_active", "==", true),
+      where("is_deleted", "==", false),
+      where("employee_id", "!=", null),
+    ],
+    [],
+  );
+  /* const { data: users, isLoading: usersIsLoading } = useBasicUsers(); */
 
   const {
     watch,
@@ -33,6 +46,7 @@ export default function HomePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const router = useBranchRouter();
+  const nextRouter = useRouter();
   const user = useAuthStore((store) => store.user);
 
   const onSubmit = async (data: LoginInput) => {
@@ -40,13 +54,21 @@ export default function HomePage() {
 
     const res = await loginWithEmailAndPassword(data);
 
-    setIsLoading(false);
-
     if (!res.success) {
+      setIsLoading(false);
       return toast.error(res.message);
     }
 
     toast.success(res.message);
+
+    if (res.data.role === "CASHIER") {
+      const branch = res.data.branch;
+
+      nextRouter.push(`/${branch}/cajero`);
+    } else if (res.data.role === "ADMIN") {
+      router.push(`/dashboard`);
+    }
+
     /* return router.push("/proveedores"); */
   };
 
