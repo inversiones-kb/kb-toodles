@@ -9,11 +9,12 @@ export interface EmployeePayment {
   receipt: CustomFile;
 }
 
-export const SHIFTS = ["MORNING", "AFTERNOON"] as const;
+export const SHIFTS = ["MORNING", "AFTERNOON", "FULL"] as const;
 export type Shift = (typeof SHIFTS)[number];
 export const SHIFT_MAP: Record<Shift, { title: string }> = {
   MORNING: { title: "Mañana" },
   AFTERNOON: { title: "Tarde" },
+  FULL: { title: "Completo" },
 };
 export const SHIFT_OPTIONS = SHIFTS.map((key) => ({
   key, // Lo usaremos para el 'key' y 'value' del SelectItem
