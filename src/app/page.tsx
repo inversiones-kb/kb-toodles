@@ -23,7 +23,7 @@ export default function HomePage() {
     [
       where("is_active", "==", true),
       where("is_deleted", "==", false),
-      where("employee_id", "!=", null),
+      /* where("employee_id", "!=", null), */
     ],
     [],
   );
@@ -116,42 +116,61 @@ export default function HomePage() {
               </div>
             </div>
           ) : (
-            <div className="w-full flex gap-3 flex-wrap">
-              {usersIsLoading ? (
-                <div className="w-full flex justify-center">
-                  <Spinner />
-                </div>
-              ) : null}
+            <div className="flex flex-col w-full gap-3 items-center">
+              <div className="w-full flex gap-3 flex-wrap justify-center-safe">
+                {usersIsLoading ? (
+                  <div className="w-full flex justify-center">
+                    <Spinner />
+                  </div>
+                ) : null}
 
-              {!usersIsLoading && users
-                ? users.map((user) => (
-                    <Button
-                      className={clsx([
-                        "flex flex-col h-fit p-4 transition-all outline-2 outline-transparent",
-                        {
-                          "outline-primary": email === user.email,
-                        },
-                      ])}
-                      variant="flat"
-                      key={user.email}
-                      type="button"
-                      onPress={() => setValue("email", user.email)}
-                    >
-                      <Avatar
-                        fallback={
-                          <>
-                            {user.name[0]}
-                            {user.last_name[0]}
-                          </>
-                        }
-                        showFallback
-                      />
-                      <p>
-                        {user.name} {user.last_name}
-                      </p>
-                    </Button>
-                  ))
-                : null}
+                {!usersIsLoading && users
+                  ? users.map((user) => (
+                      <Button
+                        className={clsx([
+                          "flex flex-col h-fit p-4 transition-all outline-2 outline-transparent",
+                          {
+                            "outline-primary": email === user.email,
+                          },
+                        ])}
+                        variant="flat"
+                        key={user.email}
+                        type="button"
+                        onPress={() => setValue("email", user.email)}
+                      >
+                        <Avatar
+                          fallback={
+                            <>
+                              {user.name[0]}
+                              {user.last_name[0]}
+                            </>
+                          }
+                          showFallback
+                        />
+                        <p>
+                          {user.name} {user.last_name}
+                        </p>
+                      </Button>
+                    ))
+                  : null}
+              </div>
+              {/* 
+              <div className="flex gap-3 items-center w-full">
+                <span className="flex-1 inline-block bg-light/20 h-px" />
+                <span>o</span>
+                <span className="flex-1 inline-block bg-light/20 h-px" />
+              </div>
+
+              <Input
+                label="Correo"
+                variant="bordered"
+                size="sm"
+                radius="lg"
+                className="flex-1"
+                isInvalid={Boolean(errors.email?.message)}
+                errorMessage={errors.email?.message}
+                {...register("email")}
+              /> */}
             </div>
           )}
 

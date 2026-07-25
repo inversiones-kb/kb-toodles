@@ -39,6 +39,7 @@ import { transformUser } from "@/utils/normalizers/normalizeUsers";
 import BranchLink from "@/components/general/BranchLink";
 import { useParams } from "next/navigation";
 import { BUSINESS_BRANCH_MAP } from "@/types/businessBranch.types";
+import { migrateCashierPasswords } from "@/actions/user.actions";
 
 export default function UsersPage() {
   const branch = useParams().branch as keyof typeof BUSINESS_BRANCH_MAP;
@@ -170,6 +171,23 @@ export default function UsersPage() {
     toast.success(res.message);
   };
 
+  const handleMigration = async () => {
+    if (
+      !window.confirm(
+        "¿Seguro que deseas reiniciar las contraseñas de todos los cajeros a su cédula?",
+      )
+    )
+      return;
+
+    try {
+      const result = await migrateCashierPasswords();
+      console.log("Reporte de migración:", result);
+      alert(result.message);
+    } catch (error) {
+      alert("Error en la migración");
+    }
+  };
+
   return (
     <main className="flex gap-5 h-full">
       <FloatingActionButton
@@ -181,6 +199,7 @@ export default function UsersPage() {
       {/* CHART SECTION */}
       <section className="w-full h-full bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
         <CardTitle Icon={IconUserDollar} title="Usuarios" />
+        {/* <Button onPress={handleMigration}>Migrar</Button> */}
         <div className="w-full overflow-y-auto h-full flex justify-center">
           <DynamicTable<User>
             columns={tableColumns}

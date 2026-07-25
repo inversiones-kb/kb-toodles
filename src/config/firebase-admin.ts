@@ -5,8 +5,6 @@ import { getFirestore } from "firebase-admin/firestore";
 // Verificamos si ya hay una aplicación inicializada para evitar errores en desarrollo
 
 if (!getApps().length) {
-  console.log("KEY:");
-  console.log(process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"));
   try {
     initializeApp({
       credential: cert({

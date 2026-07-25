@@ -52,6 +52,7 @@ const UserForm = ({ onSubmit, initialData }: Props) => {
     watch,
     setValue,
     register,
+    reset,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<UserInput>({
@@ -67,11 +68,22 @@ const UserForm = ({ onSubmit, initialData }: Props) => {
   useEffect(() => {
     if (!employeesLoading && employees.length && !initialData) {
       const first = employees[0];
-      setValue("employee_id", first.id);
+      /*   setValue("employee_id", first.id);
       setValue("name", first.name);
       setValue("last_name", first.last_name);
+      setValue("password", first.doc_number.toString()); */
+
+      reset({
+        branch,
+        employee_id: first.id,
+        name: first.name,
+        last_name: first.last_name,
+        password: first.doc_number.toString(),
+      });
     }
   }, [employeesLoading]);
+
+  console.log(watch("password"));
 
   /* const selectedEmployee = employees.find((e) => e.id === watch("employee_id")); */
 
@@ -111,12 +123,16 @@ const UserForm = ({ onSubmit, initialData }: Props) => {
                 })
               }
               onChange={(e) => {
+                console.log("Hello", e);
+
                 const selected = employees.find(
                   (employee) => employee.id === e.target.value,
                 );
                 if (!selected) return;
+
                 setValue("name", selected.name);
                 setValue("last_name", selected?.last_name);
+                setValue("password", selected?.doc_number.toString());
               }}
             >
               {(item) => (
@@ -197,6 +213,7 @@ const UserForm = ({ onSubmit, initialData }: Props) => {
                 label="Contraseña"
                 variant="bordered"
                 size="sm"
+                value={watch("password")}
                 radius="lg"
                 isInvalid={Boolean(errors.password?.message)}
                 errorMessage={errors.password?.message}
