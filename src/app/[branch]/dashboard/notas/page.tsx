@@ -166,13 +166,14 @@ export default function NotesPage() {
         </Modal>
 
         <CardTitle Icon={IconNote} title="Notas" />
-        <div className="w-full overflow-y-auto h-full columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
-          {isLoading ? (
-            <div className="flex justify-center w-full">
-              <Spinner label="Cargando notas..." />
-            </div>
-          ) : null}
 
+        {isLoading ? (
+          <div className="flex justify-center w-full h-fit">
+            <Spinner label="Cargando notas..." />
+          </div>
+        ) : null}
+
+        <div className="w-full overflow-y-auto h-full columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
           {!isLoading && data ? (
             data.length ? (
               data.map((note) => {
