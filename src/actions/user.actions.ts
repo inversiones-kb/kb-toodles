@@ -92,3 +92,31 @@ export async function adminResetPassword(uid: string, newPassword: string) {
     return { success: false, error: "No se pudo actualizar la contraseña." };
   }
 }
+
+export type BasicUser = Pick<User, "name" | "last_name" | "email">;
+
+export async function getBasicUsersList(): Promise<BasicUser[]> {
+  try {
+    const snapshot = await adminDb
+      .collection("users")
+      .select("name", "last_name", "email") // 🔥 La proyección de Firestore
+      .get();
+
+    // Mapeamos a objetos planos obligatorios para Server Actions
+    const users: BasicUser[] = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: data.name || "Sin nombre",
+        last_name: data.last_name || "",
+        email: data.email || "Sin correo",
+      };
+    });
+
+    return users;
+  } catch (error) {
+    console.error("Error obteniendo usuarios:", error);
+    // Lanzar el error permite que el frontend lo capture
+    throw new Error("No se pudo cargar la lista de usuarios.");
+  }
+}

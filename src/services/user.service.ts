@@ -1,5 +1,11 @@
 import { db } from "@/firebaseConfig";
-import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { CustomApiResponse } from "@/types/coreTypes";
 import { API_MESSAGES } from "@/utils/apiUtils";
 import { UserInput } from "@/validations/user.validations";
@@ -72,6 +78,30 @@ export const softDeleteUser = async (
       is_deleted: true, // Flag central para filtrar en las consultas del frontend
       deleted_at: new Date(), // Rastro de auditoría indispensable
     });
+
+    return {
+      success: true,
+      data: { id: id },
+      message: API_MESSAGES.users.deleted,
+    };
+  } catch (error: any) {
+    console.error(`Error al eliminar para el ID ${id}:`, error);
+
+    return {
+      success: false,
+      message: API_MESSAGES.users.error,
+    };
+  }
+};
+
+export const hardDeleteUser = async (
+  id: string,
+): Promise<CustomApiResponse> => {
+  try {
+    // 1. Obtenemos la referencia directa al documento en la colección
+    const ref = doc(db, "users", id);
+
+    await deleteDoc(ref);
 
     return {
       success: true,

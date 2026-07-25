@@ -27,7 +27,11 @@ import { useAuthStore } from "@/app/context/AuthProvider";
 import clsx from "clsx";
 import { Button, Switch } from "@heroui/react";
 import { BaseTableProps } from "@/components/ui/table/BaseTable";
-import { softDeleteUser, updateUser } from "@/services/user.service";
+import {
+  hardDeleteUser,
+  softDeleteUser,
+  updateUser,
+} from "@/services/user.service";
 import { toast } from "sonner";
 import { useCollectionQuery } from "@/hooks/useCollectionQuery";
 import { QueryConstraint, where } from "firebase/firestore";
@@ -153,8 +157,8 @@ export default function UsersPage() {
     );
   };
 
-  const handleDelete = async (id: string) => {
-    const res = await softDeleteUser(id);
+  const handleDelete = async (id: string, isHardDelete: boolean = false) => {
+    const res = await (isHardDelete ? hardDeleteUser(id) : softDeleteUser(id));
     /* const res = await createUser(data); */
 
     if (!res.success) {
@@ -163,7 +167,7 @@ export default function UsersPage() {
     }
 
     refetch();
-    toast.success("Proveedor eliminado");
+    toast.success(res.message);
   };
 
   return (
