@@ -11,9 +11,9 @@ interface Props {
 
 const NoteCard = ({ data, handleDelete }: Props) => {
   return (
-    <div className="p-3 bg-layer-3 h-fit rounded-xl max-w-xs gap-3 flex flex-col">
+    <div className="p-3 bg-layer-3 h-fit rounded-xl gap-3 flex flex-col w-full break-inside-avoid mb-4">
       <div className="flex gap-2 justify-between items-center">
-        <h6 className="text-lg">{data.title}</h6>
+        <h6 className="text-lg leading-tight">{data.title}</h6>
 
         <Popover placement="bottom-end" showArrow={true}>
           <PopoverTrigger>
