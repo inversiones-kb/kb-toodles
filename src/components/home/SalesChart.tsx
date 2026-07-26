@@ -62,7 +62,7 @@ const SalesChart = () => {
 
   return (
     <AreaChart
-      className="w-full h-full overflow-hidden"
+      className="w-full h-full overflow-hidden min-h-72"
       responsive
       data={salesData}
       margin={{ top: 5, right: 5, left: 0, bottom: 0 }}

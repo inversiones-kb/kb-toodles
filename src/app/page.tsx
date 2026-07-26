@@ -116,7 +116,7 @@ export default function HomePage() {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col w-full gap-3 items-center">
+            <div className="flex flex-col w-full gap-3 items-center pb-8">
               <div className="w-full flex gap-3 flex-wrap justify-center-safe">
                 {usersIsLoading ? (
                   <div className="w-full flex justify-center">
