@@ -111,7 +111,7 @@ const ProviderTableToolbar = ({
         )}
       />
 
-      <DateRangePicker
+      {/*  <DateRangePicker
         onChange={(value) => {
           setValue("dateRange", value);
           handleSubmit(onSubmit)();
@@ -119,7 +119,7 @@ const ProviderTableToolbar = ({
         defaultValue={watch("dateRange")}
         maxValue={today(getLocalTimeZone()) as any}
       />
-
+ */}
       <Popover
         placement="bottom-end"
         showArrow

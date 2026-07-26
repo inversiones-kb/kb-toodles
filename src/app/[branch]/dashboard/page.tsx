@@ -28,7 +28,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <main className="grid grid-cols-3 grid-rows-7 gap-5 h-full">
+    <main className="grid grid-cols-3 grid-rows-7 gap-5 h-full max-sm:flex max-sm:flex-col max-sm:overflow-y-auto">
       {/* CHART SECTION */}
       <section className="col-span-2 row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
         <CardTitle Icon={IconCashRegister} title="Ventas" />
@@ -83,7 +83,7 @@ export default function DashboardPage() {
       </section>
 
       {/* NOTEPAD SECTION */}
-      <section className="row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
+      <section className="row-span-3 max-sm:hidden bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
         <CardTitle Icon={IconNote} title="Notas" />
 
         <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">

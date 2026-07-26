@@ -25,10 +25,10 @@ export default function DashboardLayout({
     <RoleGuard allowedRoles={["ADMIN"]}>
       <div
         /* className={`${poppins.variable} gap-5 p-5 bg-background h-dvh text-light grid grid-cols-12`} */
-        className={`${poppins.variable} gap-5 p-5 bg-background h-dvh text-light flex`}
+        className={`${poppins.variable} gap-5 p-5 bg-background h-dvh text-light flex max-sm:flex-col-reverse`}
       >
         <CustomNavbar />
-        <div className="flex-1 overflow-hidden w-full h-[calc(100dvh-2.5rem)] max-h-full">
+        <div className="flex-1 overflow-hidden w-full h-[calc(100dvh-2.5rem)] max-h-full relative">
           {children}
         </div>
       </div>

@@ -37,7 +37,10 @@ const SalesChart = () => {
 
   const { data, isLoading } = useCollectionQuery<RegisterBalance>(
     "register_balances",
-    [where("branch", "==", branch), where("status", "==", "CHECKED")],
+    [
+      where("branch", "==", branch),
+      where("status", "in", ["CHECKED", "PENDING"]),
+    ],
     [user?.id],
   );
 

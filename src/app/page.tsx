@@ -78,10 +78,10 @@ export default function HomePage() {
     : undefined;
 
   return (
-    <main className="h-dvh max-h-full bg-background flex justify-center items-center">
+    <main className="h-dvh max-h-full bg-background flex justify-center items-center px-8">
       <section
         className={clsx([
-          "w-full transition-[max-width_5s] p-4 rounded-3xl overflow-y-auto h-fit bg-layer-2 flex justify-center",
+          "w-full transition-[max-width_5s] p-4 rounded-3xl overflow-y-auto h-fit bg-layer-2 flex justify-center max-h-[90%]",
           email ? "max-w-md" : "max-w-xl",
         ])}
       >

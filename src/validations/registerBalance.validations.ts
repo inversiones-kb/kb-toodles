@@ -31,7 +31,7 @@ export const createRegisterBalanceSchema = z.object({
       .object({
         pos: z.coerce.number().min(0, "El valor mínimo es 0"),
         pos_system: z.coerce.number().min(0, "El valor mínimo es 0"),
-        batch_number: z.coerce.number().min(1, "El valor mínimo es 1").int(),
+        batch_number: z.coerce.number().int().optional(),
 
         mobile: z.coerce.number().min(0, "El valor mínimo es 0"),
         mobile_system: z.coerce.number().min(0, "El valor mínimo es 0"),

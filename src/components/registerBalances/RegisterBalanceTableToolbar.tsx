@@ -99,14 +99,14 @@ const RegisterBalanceToolbar = ({
         )}
       />
 
-      <DateRangePicker
+     {/*  <DateRangePicker
         onChange={(value) => {
           setValue("dateRange", value);
           handleSubmit(onSubmit)();
         }}
         defaultValue={watch("dateRange")}
         maxValue={today(getLocalTimeZone()) as any}
-      />
+      /> */}
 
       <Popover
         placement="bottom-end"

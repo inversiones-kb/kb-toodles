@@ -19,7 +19,8 @@ interface NavbarItem extends NavbarSection {
 interface NavbarSection {
   name: string;
   Icon: Icon;
-  items: Omit<NavbarItem, "items">[];
+  items: Omit<NavbarItem, "items" | "mobile">[];
+  mobile: boolean;
 }
 
 // ? First items route must be entry path
@@ -39,6 +40,7 @@ export const NAVBAR_DATA: NavbarSection[] = [
         Icon: IconPlus,
       }, */
     ],
+    mobile: true,
   },
   {
     name: "Empleados",
@@ -55,6 +57,7 @@ export const NAVBAR_DATA: NavbarSection[] = [
         Icon: IconPlus,
       },
     ],
+    mobile: true,
   },
   {
     name: "Usuarios",
@@ -71,6 +74,7 @@ export const NAVBAR_DATA: NavbarSection[] = [
         Icon: IconPlus,
       },
     ],
+    mobile: false,
   },
   {
     name: "Proveedores",
@@ -87,6 +91,7 @@ export const NAVBAR_DATA: NavbarSection[] = [
         Icon: IconPlus,
       },
     ],
+    mobile: false,
   },
   /* {
     name: "Deudas",
@@ -135,6 +140,7 @@ export const NAVBAR_DATA: NavbarSection[] = [
         Icon: IconPlus,
       },
     ],
+    mobile: false,
   },
   /*  {
     name: "Auditorias de Inventario",

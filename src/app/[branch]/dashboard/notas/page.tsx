@@ -167,41 +167,43 @@ export default function NotesPage() {
 
         <CardTitle Icon={IconNote} title="Notas" />
 
-        {isLoading ? (
-          <div className="flex justify-center w-full h-fit">
-            <Spinner label="Cargando notas..." />
-          </div>
-        ) : null}
-
-        <div className="w-full overflow-y-auto h-full columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
-          {!isLoading && data ? (
-            data.length ? (
-              data.map((note) => {
-                return (
-                  <NoteCard
-                    key={note.id}
-                    data={note}
-                    handleDelete={handlePreDelete}
-                  />
-                );
-              })
-            ) : (
-              <EmptyState
-                title="No hay notas para mostrar"
-                description="Aquí puedes guardar notas del trabajo"
-                actionContent={
-                  <Button
-                    as={BranchLink}
-                    href="/dashboard/notas/crear"
-                    variant="flat"
-                    startContent={<IconPlus />}
-                  >
-                    Crear
-                  </Button>
-                }
-              />
-            )
+        <div className="flex flex-col flex-1 overflow-y-auto w-full">
+          {isLoading ? (
+            <div className="flex justify-center w-full h-fit">
+              <Spinner label="Cargando notas..." />
+            </div>
           ) : null}
+
+          <div className="w-full columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
+            {!isLoading && data ? (
+              data.length ? (
+                data.map((note) => {
+                  return (
+                    <NoteCard
+                      key={note.id}
+                      data={note}
+                      handleDelete={handlePreDelete}
+                    />
+                  );
+                })
+              ) : (
+                <EmptyState
+                  title="No hay notas para mostrar"
+                  description="Aquí puedes guardar notas del trabajo"
+                  actionContent={
+                    <Button
+                      as={BranchLink}
+                      href="/dashboard/notas/crear"
+                      variant="flat"
+                      startContent={<IconPlus />}
+                    >
+                      Crear
+                    </Button>
+                  }
+                />
+              )
+            ) : null}
+          </div>
         </div>
       </section>
     </main>

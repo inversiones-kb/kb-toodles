@@ -10,6 +10,11 @@ import {
   Avatar,
   Button,
   Divider,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
   Modal,
   ModalBody,
   ModalContent,
@@ -25,7 +30,9 @@ import {
 } from "@heroui/react";
 import {
   IconChevronsRight,
+  IconChevronUp,
   IconDashboard,
+  IconMenu,
   IconSelector,
 } from "@tabler/icons-react";
 import clsx from "clsx";
@@ -44,13 +51,14 @@ import {
   BusinessBranch,
 } from "@/types/businessBranch.types";
 
-const CustomNavbar = () => {
+const Content = () => {
   const pathname = usePathname();
   const { isCollapsed, setIsCollapsed } = useNavbarStore();
   const { user, isLoading, clearAuth } = useAuthStore((store) => store);
   const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
   const nextRouter = useRouter();
-  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const logoutDisclosure = useDisclosure();
+
   const branch = useParams().branch as keyof typeof BUSINESS_BRANCH_MAP;
 
   useEffect(() => {
@@ -64,10 +72,6 @@ const CustomNavbar = () => {
       localStorage.setItem("navbarIsCollapsed", isCollapsed.toString());
     }
   }, [isCollapsed]);
-
-  function toggleMenuIsCollapsed() {
-    setIsCollapsed(!isCollapsed);
-  }
 
   const handleLogout = async () => {
     setDeleteLoading(true);
@@ -97,15 +101,14 @@ const CustomNavbar = () => {
     nextRouter.push(newPath);
   };
 
+  const branchlessPathname = pathname.replace(`/${branch}`, "");
+
   return (
-    <nav
-      className={clsx([
-        "bg-layer-2 h-full rounded-3xl flex flex-col p-3 items-left justify-between w-full opacity-0 transition-all gap-3 overflow-hidden max-w-56 min-w-56",
-        /* { "max-w-56 min-w-56": !isCollapsed }, */
-        { fadeIn: isCollapsed != null },
-      ])}
-    >
-      <Modal isOpen={isOpen} onClose={onClose}>
+    <>
+      <Modal
+        isOpen={logoutDisclosure.isOpen}
+        onClose={logoutDisclosure.onClose}
+      >
         <ModalContent>
           <ModalHeader>¿Cerrar sesión?</ModalHeader>
           <ModalBody>
@@ -114,7 +117,7 @@ const CustomNavbar = () => {
           <ModalFooter>
             <Button
               variant="light"
-              onPress={onClose}
+              onPress={logoutDisclosure.onClose}
               isDisabled={deleteLoading}
             >
               Cancelar
@@ -153,7 +156,7 @@ const CustomNavbar = () => {
           <BranchLink
             className={clsx([
               "flex items-center gap-3 p-2 hover:bg-layer-3 transition-colors rounded-2xl",
-              { "text-light bg-light/10": pathname === "/dashboard" },
+              { "text-light bg-light/10": branchlessPathname === "/dashboard" },
             ])}
             href={"/dashboard"}
           >
@@ -166,7 +169,7 @@ const CustomNavbar = () => {
           <Accordion
             className="px-0 flex flex-col"
             variant="light"
-            defaultExpandedKeys={[`/${pathname.split("/")[1]}`]}
+            defaultExpandedKeys={[`/${branchlessPathname.split("/")[1]}`]}
             showDivider={true}
             dividerProps={{
               className: "bg-stone-600/10 rounded-full",
@@ -192,7 +195,7 @@ const CustomNavbar = () => {
                       "flex items-center gap-1 p-2 hover:bg-layer-2 transition-colors rounded-lg text-soft-light",
                       {
                         "text-light bg-light/10 hover:bg-light/10":
-                          pathname === child.href,
+                          branchlessPathname === child.href,
                       },
                     ])}
                     href={child.href}
@@ -224,7 +227,8 @@ const CustomNavbar = () => {
                 className={clsx([
                   "text-soft-light",
                   {
-                    "text-light bg-light/10": pathname === "/dashboard",
+                    "text-light bg-light/10":
+                      branchlessPathname === "/dashboard",
                   },
                 ])}
                 variant="light"
@@ -262,7 +266,7 @@ const CustomNavbar = () => {
       <Divider className="bg-layer-3 my-2" />
 
       {/* BOTTOM CONTENT */}
-      <div className="flex flex-col gap-2 items-start w-full">
+      <div className="flex flex-col gap-4 items-start w-full">
         <Select
           defaultSelectedKeys={[branch || BUSINESS_BRANCHES[0]]}
           label="Sucursal"
@@ -280,7 +284,39 @@ const CustomNavbar = () => {
           {(item) => <SelectItem key={item.key}>{item.title}</SelectItem>}
         </Select>
 
-        <Popover placement="right" offset={0} showArrow>
+        <div className="flex justify-start px-0 items-center gap-2 w-full rounded-2xl max-w-full min-w-0">
+          <Avatar
+            showFallback
+            color="primary"
+            className="rounded-2xl bg-primary/20 text-primary"
+            fallback={
+              <p className="text-lg">
+                {user?.name[0]}
+                {user?.last_name[0]}
+              </p>
+            }
+          />
+
+          <p
+            className={clsx([
+              "text-xs transition-opacity text-light",
+              { "opacity-0": isCollapsed },
+            ])}
+          >
+            {user?.name} {user?.last_name}
+          </p>
+        </div>
+
+        <Button
+          variant="flat"
+          color="default"
+          className="w-full"
+          onPress={logoutDisclosure.onOpen}
+        >
+          Cerrar sesión
+        </Button>
+
+        {/* <Popover placement="right" offset={0} showArrow>
           <PopoverTrigger>
             <Button
               variant="light"
@@ -316,11 +352,15 @@ const CustomNavbar = () => {
             </Button>
           </PopoverTrigger>
           <PopoverContent className="p-1 rounded-2xl">
-            <Button variant="flat" color="danger" onPress={onOpen}>
+            <Button
+              variant="flat"
+              color="danger"
+              onPress={logoutDisclosure.onOpen}
+            >
               Cerrar sesión
             </Button>
           </PopoverContent>
-        </Popover>
+        </Popover> */}
 
         {/*  <Button
           isIconOnly
@@ -337,7 +377,91 @@ const CustomNavbar = () => {
           />
         </Button> */}
       </div>
-    </nav>
+    </>
+  );
+};
+
+const CustomNavbar = () => {
+  const branch = useParams().branch as keyof typeof BUSINESS_BRANCH_MAP;
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const pathname = usePathname();
+  const branchlessPathname = pathname.replace(`/${branch}`, "");
+
+  useEffect(() => {
+    onClose();
+  }, [pathname, onClose]);
+
+  return (
+    <>
+      <Drawer
+        isDismissable={true}
+        isKeyboardDismissDisabled={true}
+        isOpen={isOpen}
+        onOpenChange={onOpenChange}
+        backdrop="opaque"
+      >
+        <DrawerContent className="bg-stone-900 flex flex-col gap-3 p-6">
+          <Content />
+        </DrawerContent>
+      </Drawer>
+
+      <nav
+        className={clsx([
+          "bg-layer-2 h-full max-sm:hidden rounded-3xl flex flex-col p-3 items-left justify-between w-full opacity-0 transition-all gap-3 overflow-hidden max-w-56 min-w-56 fadeIn",
+          /* { "max-w-56 min-w-56": !isCollapsed }, */
+        ])}
+      >
+        <Content />
+      </nav>
+
+      <nav className="max-sm:flex hidden bg-layer-2 p-1.5 rounded-3xl items-center gap-2 justify-between">
+        <Button
+          as={BranchLink}
+          href="/dashboard"
+          isIconOnly
+          variant="light"
+          className={clsx([
+            "flex-1 rounded-[1.2rem] py-6",
+            {
+              "bg-primary/10 text-primary": branchlessPathname === "/dashboard",
+            },
+          ])}
+        >
+          <IconDashboard />
+        </Button>
+
+        {NAVBAR_DATA.filter((e) => e.mobile).map((item) => (
+          <Button
+            key={item.name}
+            as={BranchLink}
+            href={item.items[0].href}
+            isIconOnly
+            variant="light"
+            className={clsx([
+              "flex-1 rounded-[1.2rem] py-6",
+              {
+                "bg-primary/10 text-primary":
+                  branchlessPathname === item.items[0].href,
+              },
+            ])}
+          >
+            <item.Icon />
+          </Button>
+        ))}
+
+        <Button
+          onPress={() => onOpen()}
+          className={clsx([
+            "flex-1 rounded-[1.2rem] py-6",
+            { "bg-primary/10 text-primary": isOpen },
+          ])}
+          variant="light"
+          isIconOnly
+        >
+          <IconMenu />
+        </Button>
+      </nav>
+    </>
   );
 };
 
