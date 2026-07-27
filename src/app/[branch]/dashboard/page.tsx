@@ -23,6 +23,7 @@ import { useParams } from "next/navigation";
 import { BusinessBranch } from "@/types/businessBranch.types";
 import { where } from "firebase/firestore";
 import CurrencySalesChart from "@/components/home/CurrencySalesChart";
+import DiffSalesChart from "@/components/home/DiffSalesChart";
 
 export default function DashboardPage() {
   const user = useAuthStore((store) => store.user);
@@ -73,19 +74,14 @@ export default function DashboardPage() {
 
       {/* DEBTS SECTION */}
       <section className="row-span-4 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconUserDollar} title="Deudas" backButton={false} />
+        <CardTitle
+          Icon={IconUserDollar}
+          title="Diferencias de cuadres de caja"
+          backButton={false}
+        />
 
         <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
-          {/*  {MOCK_DEBTS.map((debt) => (
-            <HomeDebtCard
-              key={debt.id}
-              created_at={debt.created_at}
-              title={debt.name}
-              amount={debt.amount}
-              currency={debt.currency as Currency}
-            />
-          ))} */}
-          <EmptyState />
+          <DiffSalesChart data={data} isLoading={isLoading} />
         </div>
       </section>
 

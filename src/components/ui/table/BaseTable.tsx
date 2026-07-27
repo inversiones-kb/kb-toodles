@@ -173,6 +173,7 @@ export default function BaseTable<T extends { id: string; name?: string }>({
             <TableColumn
               key={column.key}
               align={column.key === "actions" ? "center" : "start"}
+              className={column.key === "actions" ? "sticky right-0" : ""}
             >
               {column.label}
             </TableColumn>
@@ -191,7 +192,13 @@ export default function BaseTable<T extends { id: string; name?: string }>({
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (
-                <TableCell>
+                <TableCell
+                  className={
+                    columnKey === "actions"
+                      ? "sticky right-0 bg-layer-2 z-10"
+                      : ""
+                  }
+                >
                   {renderCell
                     ? renderCell(item, columnKey, handlePreDelete)
                     : getKeyValue(item, columnKey)}

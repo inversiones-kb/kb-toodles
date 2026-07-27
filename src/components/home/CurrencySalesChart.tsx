@@ -73,8 +73,6 @@ const CurrencySalesChart = ({ data, isLoading }: Props) => {
   const activeConfig =
     chartConfig[selectedCurrency as keyof typeof chartConfig];
 
-  console.log(salesData);
-
   if (isLoading)
     return (
       <div className="w-full justify-center h-full items-center flex">
@@ -137,12 +135,14 @@ const CurrencySalesChart = ({ data, isLoading }: Props) => {
             "Monto",
           ]} */
           content={<CustomTooltip />}
+          cursor={{ fill: "#fff1" }} // 🔥 Aquí está el secreto
         />
         {/* Solo renderizamos la barra de la moneda seleccionada */}
         <Bar
           dataKey={activeConfig.dataKey}
           fill={activeConfig.color}
           radius={[16, 16, 0, 0]}
+          /* background={{ fillOpacity:.1 }} */
         />
       </BarChart>
     </div>

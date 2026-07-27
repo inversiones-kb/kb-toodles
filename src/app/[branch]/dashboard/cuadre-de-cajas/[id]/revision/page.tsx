@@ -127,7 +127,7 @@ export default function CheckRegisterBalancePage() {
   const usd2 =
     Number(watch("money.usd.rate2")) * Number(watch("money.usd.cash2"));
 
-  const posBatches = watch("money.bs.pos_batches");
+  const posBatches = watch("money.bs.pos_batches") || [];
 
   return (
     <main className="flex gap-5 h-full">

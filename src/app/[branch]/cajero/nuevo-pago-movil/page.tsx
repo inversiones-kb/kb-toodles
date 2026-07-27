@@ -62,6 +62,7 @@ export default function CashierNewMobilePayment() {
     defaultValues: {
       branch,
       amount: 0,
+      ref: "",
     },
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -96,6 +97,7 @@ export default function CashierNewMobilePayment() {
         shift_id: shift.id,
         branch,
         amount: 0,
+        ref: "",
       });
     }
   }, [shiftLoading]);
@@ -124,6 +126,21 @@ export default function CashierNewMobilePayment() {
                   <h2 className="text-2xl text-center w-full font-semibold mb-4">
                     Completa el formulario
                   </h2>
+
+                  <Input
+                    placeholder="Referencia"
+                    aria-label="Referencia"
+                    variant="bordered"
+                    size="sm"
+                    classNames={{
+                      base: "w-full",
+                      inputWrapper: "h-12",
+                    }}
+                    radius="lg"
+                    isInvalid={Boolean(errors.ref?.message)}
+                    errorMessage={errors.ref?.message}
+                    {...register("ref")}
+                  />
 
                   <FormattedNumberInput
                     control={control}

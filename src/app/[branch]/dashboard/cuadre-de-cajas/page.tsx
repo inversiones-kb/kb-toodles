@@ -44,7 +44,7 @@ export default function RegisterBalancesPage() {
 
   const [filters, setFilters] = useState<RegisterBalanceFilters>({
     search: "",
-    status: undefined,
+    status: "PENDING",
     checkout_number: undefined,
     dateRange: {
       start: today(getLocalTimeZone()) as any,
@@ -79,8 +79,7 @@ export default function RegisterBalancesPage() {
 
   const tableColumns = [
     { key: "checkout_number", label: "Caja" },
-    { key: "type", label: "Tipo" },
-
+    /* { key: "type", label: "Tipo" }, */
     { key: "user_snapshot", label: "Cajero" },
     { key: "total_expenses", label: "Gastos" },
     { key: "sales", label: "Venta" },
@@ -107,13 +106,13 @@ export default function RegisterBalancesPage() {
       case "sales":
         if (!item.money) return "--";
 
-        return `COP ${moneyFormatter.format(item.money.cop.cash + (usd1 + usd2) + item.total_expenses)}`;
+        return `$${moneyFormatter.format(item.money.cop.cash + (usd1 + usd2) + item.total_expenses)}`;
 
       case "total_expenses":
-        return `COP ${moneyFormatter.format(item.total_expenses)}`;
+        return `$${moneyFormatter.format(item.total_expenses)}`;
 
       case "user_snapshot":
-        return `${item.user_snapshot.name} ${item.user_snapshot.last_name}`;
+        return `${item.user_snapshot.name.split(" ")[0]} ${item.user_snapshot.last_name.split(" ")[0]}`;
       case "created_at":
         return dateToString(item.created_at, "DD/MM/YYYY");
       case "status":
@@ -128,6 +127,7 @@ export default function RegisterBalancesPage() {
                   ? "warning"
                   : "success"
             }
+            className="text-sm text-soft-light"
           >
             {REGISTER_BALANCE_STATUS_MAP[status].title}
           </Chip>
@@ -190,7 +190,7 @@ export default function RegisterBalancesPage() {
         );
       case "actions":
         return (
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-2 justify-center sticky">
             <Button
               as={BranchLink}
               href={`/dashboard/cuadre-de-cajas/${item.id}/revision`}

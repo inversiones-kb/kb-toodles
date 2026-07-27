@@ -3,6 +3,7 @@ import * as z from "zod";
 
 export const createMobilePaymentSchema = z.object({
   amount: z.coerce.number().min(1, "El valor mínimo es 1"),
+  ref: z.string().min(1, "Ingresa los últimos dígitos del número de refencia"),
 
   // 2. Llaves Foráneas (Foreign Keys) obligatorias
   checkout_number: z.coerce.number().int(),
