@@ -24,8 +24,13 @@ import BranchLink from "@/components/general/BranchLink";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
 import { BusinessBranch } from "@/types/businessBranch.types";
 import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
+import {
+  createMobilePaymentSchema,
+  MobilePaymentInput,
+} from "@/validations/mobile_payment.validations";
+import { createMobilePayment } from "@/services/mobile-payment.service";
 
-export default function CashierNewExpensePage() {
+export default function CashierNewMobilePayment() {
   const branch = useParams().branch as BusinessBranch;
 
   const user = useAuthStore((store) => store.user);
@@ -33,6 +38,7 @@ export default function CashierNewExpensePage() {
   const {
     data: activeShifts,
     isLoading: shiftLoading,
+
     error,
     refetch,
   } = useCollectionQuery<RegisterBalance>(
@@ -45,30 +51,30 @@ export default function CashierNewExpensePage() {
 
   const {
     register,
+    control,
     handleSubmit,
     setValue,
     reset,
     watch,
-    control,
     formState: { errors },
-  } = useForm<ExpenseInput>({
-    resolver: zodResolver(createExpenseSchema),
+  } = useForm<MobilePaymentInput>({
+    resolver: zodResolver(createMobilePaymentSchema),
     defaultValues: {
-      currency: "COP",
       branch,
+      amount: 0,
     },
   });
   const [isLoading, setIsLoading] = useState(false);
   const router = useBranchRouter();
 
-  const onSubmit: SubmitHandler<ExpenseInput> = async (data) => {
+  const onSubmit: SubmitHandler<MobilePaymentInput> = async (data) => {
     console.log(data);
     if (!user) {
       return toast.error("No estás autenticado");
     }
 
     setIsLoading(true);
-    const res = await createExpense({
+    const res = await createMobilePayment({
       ...data,
       user_id: user.uid,
     });
@@ -88,8 +94,8 @@ export default function CashierNewExpensePage() {
       reset({
         checkout_number: shift.checkout_number,
         shift_id: shift.id,
-        currency: "COP",
         branch,
+        amount: 0,
       });
     }
   }, [shiftLoading]);
@@ -100,7 +106,7 @@ export default function CashierNewExpensePage() {
     <main className="h-dvh max-h-full bg-background flex justify-center items-center">
       <section className="w-full max-w-lg p-3 gap-4 rounded-3xl overflow-y-auto h-fit bg-layer-2 flex flex-col justify-center">
         <CardTitle
-          title={`Nuevo gasto en la caja ${shift ? shift.checkout_number : "..."}`}
+          title={`Nuevo pago móvil en la caja ${shift ? shift.checkout_number : "..."}`}
           backButton={true}
         />
 
@@ -118,91 +124,11 @@ export default function CashierNewExpensePage() {
                   <h2 className="text-2xl text-center w-full font-semibold mb-4">
                     Completa el formulario
                   </h2>
-                  {/* <div className="flex items-center gap-2 h-12 w-full">
-                    <Input
-                      aria-label="Número de caja"
-                      classNames={{
-                        base: "flex-1 h-full w-1/2",
-                        inputWrapper: "h-full",
-                        input: "w-min",
-                      }}
-                      value={watch("checkout_number").toString()}
-                      startContent={
-                        <p className="font-medium text-sm text-stone-300 min-w-max">
-                          Caja número
-                        </p>
-                      }
-                      disabled
-                      variant="bordered"
-                      size="sm"
-                      radius="lg"
-                      isInvalid={Boolean(errors.checkout_number?.message)}
-                      errorMessage={errors.checkout_number?.message}
-                      {...register("checkout_number")}
-                    />
-                    <div className="flex-1 flex h-full gap-1">
-                      <Button
-                        variant="faded"
-                        type="button"
-                        onPress={(_) => setValue("checkout_number", 1)}
-                        className="bg-light/10 h-full flex-1"
-                        isIconOnly
-                      >
-                        #1
-                      </Button>
-                      <Button
-                        variant="faded"
-                        type="button"
-                        onPress={(_) => setValue("checkout_number", 2)}
-                        className="bg-light/10 h-full flex-1"
-                        isIconOnly
-                      >
-                        #2
-                      </Button>
-                      <Button
-                        variant="faded"
-                        type="button"
-                        onPress={(_) => setValue("checkout_number", 3)}
-                        className="bg-light/10 h-full flex-1"
-                        isIconOnly
-                      >
-                        #3
-                      </Button>
-                      <Button
-                        variant="faded"
-                        type="button"
-                        onPress={(_) => setValue("checkout_number", 4)}
-                        className="bg-light/10 h-full flex-1"
-                        isIconOnly
-                      >
-                        #4
-                      </Button>
-                      <Button
-                        variant="faded"
-                        type="button"
-                        onPress={(_) => setValue("checkout_number", 5)}
-                        className="bg-light/10 h-full flex-1"
-                        isIconOnly
-                      >
-                        #5
-                      </Button>
-                    </div>
-                  </div> */}
 
                   <FormattedNumberInput
                     control={control}
                     name="amount"
                     placeholder="Cantidad"
-                  />
-
-                  <Textarea
-                    aria-label="Motivo del gasto"
-                    rows={4}
-                    placeholder="Motivo del gasto"
-                    variant="bordered"
-                    {...register("description")}
-                    isInvalid={Boolean(errors.description)}
-                    errorMessage={errors.description?.message}
                   />
 
                   <Button
@@ -211,7 +137,7 @@ export default function CashierNewExpensePage() {
                     className="w-full mt-4"
                     isLoading={isLoading}
                   >
-                    Guardar nuevo gasto
+                    Guardar nuevo pago móvil
                   </Button>
                 </>
               ) : (

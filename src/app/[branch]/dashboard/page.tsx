@@ -18,23 +18,39 @@ import EmptyState from "@/components/general/EmptyState";
 import HomeNextSeasonCard from "@/components/home/HomeNextSeasonCard";
 import BranchLink from "@/components/general/BranchLink";
 import SalesChart from "@/components/home/SalesChart";
+import { RegisterBalance } from "@/validations/registerBalance.validations";
+import { useParams } from "next/navigation";
+import { BusinessBranch } from "@/types/businessBranch.types";
+import { where } from "firebase/firestore";
+import CurrencySalesChart from "@/components/home/CurrencySalesChart";
 
 export default function DashboardPage() {
   const user = useAuthStore((store) => store.user);
+  const branch = useParams().branch as BusinessBranch;
+
   const { data: notes, isLoading: notesLoading } = useCollectionQuery<Note>(
     "notes",
     [],
     [user?.uid],
   );
 
+  const { data, isLoading } = useCollectionQuery<RegisterBalance>(
+    "register_balances",
+    [
+      where("branch", "==", branch),
+      where("status", "in", ["CHECKED", "PENDING"]),
+    ],
+    [user?.id],
+  );
+
   return (
     <main className="grid grid-cols-3 grid-rows-7 gap-5 h-full max-sm:flex max-sm:flex-col max-sm:overflow-y-auto">
       {/* CHART SECTION */}
       <section className="col-span-2 row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconCashRegister} title="Ventas" />
+        <CardTitle Icon={IconCashRegister} title="Ventas" backButton={false} />
 
         <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
-          <SalesChart />
+          <SalesChart data={data} isLoading={isLoading} />
         </div>
         {/* 
         <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
@@ -44,24 +60,20 @@ export default function DashboardPage() {
 
       {/* ORDERS SECTION */}
       <section className="row-span-4 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconInvoice} title="Pedidos" />
+        <CardTitle
+          Icon={IconInvoice}
+          title="Ventas por moneda"
+          backButton={false}
+        />
 
-        <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
-          {/* {MOCK_ORDERS.map((order) => (
-            <HomeOrderCard
-              key={order.id}
-              created_at={order.created_at}
-              title={order.name}
-              provider={order.provider_id.toString()}
-            />
-          ))} */}
-          <EmptyState />
+        <div className="flex flex-col gap-2 overflow-y-auto flex-1">
+          <CurrencySalesChart data={data} isLoading={isLoading} />
         </div>
       </section>
 
       {/* DEBTS SECTION */}
       <section className="row-span-4 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconUserDollar} title="Deudas" />
+        <CardTitle Icon={IconUserDollar} title="Deudas" backButton={false} />
 
         <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
           {/*  {MOCK_DEBTS.map((debt) => (
@@ -84,7 +96,7 @@ export default function DashboardPage() {
 
       {/* NOTEPAD SECTION */}
       <section className="row-span-3 max-sm:hidden bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconNote} title="Notas" />
+        <CardTitle Icon={IconNote} title="Notas" backButton={false} />
 
         <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
           {notesLoading ? <Spinner /> : null}
@@ -121,7 +133,11 @@ export default function DashboardPage() {
 
       {/* SEASON SECTION */}
       <section className="row-span-2 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconConfetti} title="Siguiente temporada" />
+        <CardTitle
+          Icon={IconConfetti}
+          title="Siguiente temporada"
+          backButton={false}
+        />
         <HomeNextSeasonCard />
       </section>
     </main>

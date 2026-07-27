@@ -12,7 +12,11 @@ import { DeepPartial } from "react-hook-form";
 export const openRegisterBalance = async (
   data: Pick<
     RegisterBalanceInput,
-    "status" | "checkout_number" | "total_expenses" | "branch"
+    | "status"
+    | "checkout_number"
+    | "total_expenses"
+    | "branch"
+    | "total_mobile_payments"
   > &
     Pick<RegisterBalance, "user_snapshot" | "user_id">,
 ): Promise<CustomApiResponse> => {

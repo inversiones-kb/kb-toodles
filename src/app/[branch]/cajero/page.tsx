@@ -6,6 +6,7 @@ import {
   IconArrowNarrowRight,
   IconCashBanknote,
   IconClock,
+  IconDeviceMobile,
   IconPennant,
   IconPrinter,
 } from "@tabler/icons-react";
@@ -95,6 +96,7 @@ export default function CashierPage() {
       status: "OPEN",
       user_id: user.uid,
       total_expenses: 0,
+      total_mobile_payments: 0,
       branch,
     });
     /* const res = await createUser(data); */
@@ -190,24 +192,66 @@ export default function CashierPage() {
 
                 <p>Caja #{shift.checkout_number}</p>
               </div>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
+
+              {/*  <div className="flex flex-row gap-4 items-stretch">
                 <Button
                   as={BranchLink}
                   href="/cajero/nuevo-gasto"
-                  className="flex flex-col p-3 items-start rounded-xl bg-layer-3 h-fit"
+                  className="flex flex-col p-3 items-start rounded-xl bg-layer-3 flex-1"
                 >
                   <IconCashBanknote className="min-w-12 min-h-12" />
-                  <p className="text-light">Registrar nuevo gasto</p>
+                  <p className="text-light w-full whitespace-break-spaces">
+                    Registrar nuevo gasto
+                  </p>
+                </Button>
+
+                <Button
+                  as={BranchLink}
+                  href="/cajero/nuevo-gasto"
+                  className="flex flex-col p-3 items-start rounded-xl bg-layer-3 flex-1"
+                >
+                  <IconDeviceMobile className="min-w-12 min-h-12" />
+                  <p className="text-light w-full whitespace-break-spaces">
+                    Registrar nuevo pago móvil
+                  </p>
                 </Button>
 
                 <Button
                   as={BranchLink}
                   href="/cajero/cierre-de-caja"
-                  className="flex flex-col p-3 items-start rounded-xl bg-layer-3 h-fit"
+                  className="flex flex-col p-3 items-start rounded-xl bg-layer-3 flex-1"
                 >
                   <IconPrinter className="min-w-12 min-h-12" />
-                  <p className="text-light">Cerrar caja</p>
+                  <p className="text-light w-full whitespace-break-spaces">
+                    Cerrar caja
+                  </p>
                 </Button>
+              </div> */}
+
+              <div className="flex flex-row gap-4 items-stretch">
+                <BranchLink
+                  href="/cajero/nuevo-gasto"
+                  className="flex flex-col p-3 items-center justify-center text-center rounded-xl bg-layer-3 flex-1 text-sm gap-2 leading-tight hover:brightness-110 active:scale-95 transition-all"
+                >
+                  <IconCashBanknote size={40} />
+                  Registrar nuevo gasto
+                </BranchLink>
+
+                <BranchLink
+                  href="/cajero/nuevo-pago-movil"
+                  className="flex flex-col p-3 items-center justify-center text-center rounded-xl bg-layer-3 flex-1 text-sm gap-2 leading-tight hover:brightness-110 active:scale-95 transition-all"
+                >
+                  <IconDeviceMobile size={40} />
+                  Registrar nuevo pago móvil
+                </BranchLink>
+
+                <BranchLink
+                  href="/cajero/cierre-de-caja"
+                  className="flex flex-col p-3 items-center justify-center text-center rounded-xl bg-layer-3 flex-1 text-sm gap-2 leading-tight hover:brightness-110 active:scale-95 transition-all"
+                >
+                  <IconPrinter size={40} />
+                  Cerrar caja
+                </BranchLink>
               </div>
 
               <div className="flex flex-col flex-1 gap-2 max-h-full overflow-y-auto">

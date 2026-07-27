@@ -3,7 +3,12 @@
 import CardTitle from "@/components/home/CardTitle";
 
 import { Button, Form, Input, Spinner, Switch } from "@heroui/react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import {
+  Controller,
+  SubmitHandler,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -23,6 +28,7 @@ import { moneyFormatter } from "@/utils/formatters";
 import {
   IconArrowNarrowLeft,
   IconCashRegister,
+  IconPlus,
   IconTrash,
 } from "@tabler/icons-react";
 import { useCollectionQuery } from "@/hooks/useCollectionQuery";
@@ -34,6 +40,9 @@ import BranchLink from "@/components/general/BranchLink";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
 import { BusinessBranch } from "@/types/businessBranch.types";
 import { dateToString, formatOnlyTime } from "@/utils/dateUtils";
+import { NumericFormat } from "react-number-format";
+import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
+import { MobilePayment } from "@/validations/mobile_payment.validations";
 
 export default function CashierRegisterBalancePage() {
   const user = useAuthStore((store) => store.user);
@@ -47,7 +56,7 @@ export default function CashierRegisterBalancePage() {
   } = useCollectionQuery<RegisterBalance>(
     "register_balances",
     [where("user_id", "==", user?.uid || ""), where("status", "==", "OPEN")],
-    [user?.uid], // 🔥 CRUCIAL: Solo se vuelve a ejecutar si el usuario cambia
+    [user?.uid],
   );
 
   const shift = activeShifts[0];
@@ -56,12 +65,20 @@ export default function CashierRegisterBalancePage() {
     useCollectionQuery<Expense>(
       "expenses",
       [where("shift_id", "==", shift ? shift.id : "")],
-      [shift], // 🔥 CRUCIAL: Solo se vuelve a ejecutar si el usuario cambia
+      [shift],
+    );
+
+  const { data: mobilePayments, isLoading: mobilePaymentsLoading } =
+    useCollectionQuery<MobilePayment>(
+      "mobile_payments",
+      [where("shift_id", "==", shift ? shift.id : "")],
+      [shift],
     );
 
   const {
     register,
     setValue,
+    control,
     reset,
     watch,
     handleSubmit,
@@ -72,12 +89,33 @@ export default function CashierRegisterBalancePage() {
       is_fiscal: false,
       checkout_number: 1,
       money: {
-        bs: { mobile_system: 0, pos_system: 0 },
-        cop: { system: 0 },
+        bs: {
+          mobile: 0,
+          mobile_system: 0,
+          pos_system: 0,
+          pos: 0,
+          pos_batches: [],
+        },
+        cop: { cash: 0, system: 0 },
+        usd: {
+          rate1: 0,
+          rate2: 0,
+          cash1: 0,
+          cash2: 0,
+        },
       },
       status: "PENDING",
       branch,
     },
+  });
+
+  const {
+    fields: posBatchesFields,
+    append,
+    remove,
+  } = useFieldArray({
+    control,
+    name: "money.bs.pos_batches", // La ruta exacta en tu Zod schema
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -117,8 +155,20 @@ export default function CashierRegisterBalancePage() {
         checkout_number: shift.checkout_number,
         is_fiscal: false,
         money: {
-          bs: { mobile_system: 0, pos_system: 0 },
-          cop: { system: 0 },
+          bs: {
+            mobile: 0,
+            mobile_system: 0,
+            pos_system: 0,
+            pos: 0,
+            pos_batches: [],
+          },
+          cop: { system: 0, cash: 0 },
+          usd: {
+            rate1: 0,
+            rate2: 0,
+            cash1: 0,
+            cash2: 0,
+          },
         },
         status: "PENDING",
         branch,
@@ -132,12 +182,30 @@ export default function CashierRegisterBalancePage() {
     Number(watch("money.usd.rate2")) * Number(watch("money.usd.cash2"));
 
   const totalExpenses = expenses.reduce((acc, item) => acc + item.amount, 0);
+  const totalMobilePayments = mobilePayments.reduce(
+    (acc, item) => acc + item.amount,
+    0,
+  );
 
   useEffect(() => {
     if (!expensesLoading && expenses) {
       setValue("total_expenses", totalExpenses);
     }
-  }, [expensesLoading]);
+    if (!mobilePaymentsLoading && mobilePayments) {
+      setValue("total_mobile_payments", totalMobilePayments);
+    }
+  }, [expensesLoading, mobilePaymentsLoading]);
+
+  const bsPosBatches = watch("money.bs.pos_batches") || [];
+
+  const bsPosTotal = bsPosBatches.reduce(
+    (acc, batch) => acc + Number(batch.amount),
+    0,
+  );
+
+  useEffect(() => {
+    setValue("money.bs.pos", bsPosTotal);
+  }, [bsPosTotal]);
 
   return (
     <main className="flex gap-5 h-full p-8 justify-center items-center">
@@ -198,169 +266,86 @@ export default function CashierRegisterBalancePage() {
                   <div className="bg-layer-3 w-full gap-2 rounded-xl p-3 flex flex-col">
                     <InputGroupSection title="Dólares">
                       <div className="flex gap-2">
-                        <Input
-                          aria-label="Tasa Dólares 1"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
+                        <FormattedNumberInput
+                          control={control}
+                          name="money.usd.rate1"
                           placeholder="Tasa 1"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.usd?.rate1)}
-                          errorMessage={errors.money?.usd?.rate1?.message}
-                          {...register("money.usd.rate1")}
                         />
 
-                        <Input
-                          aria-label="Dólares en efectivo 1"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
+                        <FormattedNumberInput
+                          control={control}
+                          name="money.usd.cash1"
                           placeholder="Efectivo 1"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.usd?.cash1)}
-                          errorMessage={errors.money?.usd?.cash1?.message}
-                          {...register("money.usd.cash1")}
-                        />
-
-                        <Input
-                          aria-label="Dólares 1"
-                          type="text"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">COP</p>
-                          }
-                          value={moneyFormatter.format(usd1)}
-                          isDisabled
-                          placeholder="Conversión"
-                          variant="faded"
-                          size="md"
-                          radius="lg"
                         />
                       </div>
                       <div className="flex gap-2">
-                        <Input
-                          aria-label="Tasa Dólares 2"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
+                        <FormattedNumberInput
+                          control={control}
+                          name="money.usd.rate2"
                           placeholder="Tasa 2"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.usd?.rate2)}
-                          errorMessage={errors.money?.usd?.rate2?.message}
-                          {...register("money.usd.rate2")}
                         />
 
-                        <Input
-                          aria-label="Dólares en efectivo 2"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
+                        <FormattedNumberInput
+                          control={control}
+                          name="money.usd.cash2"
                           placeholder="Efectivo 2"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.usd?.cash2)}
-                          errorMessage={errors.money?.usd?.cash2?.message}
-                          {...register("money.usd.cash2")}
-                        />
-
-                        <Input
-                          aria-label="Dólares 2"
-                          type="text"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">COP</p>
-                          }
-                          value={moneyFormatter.format(usd2)}
-                          isDisabled
-                          placeholder="Conversión"
-                          variant="faded"
-                          size="md"
-                          radius="lg"
                         />
                       </div>
-
-                      <Input
-                        isDisabled
-                        aria-label="Dólares totales en pesos"
-                        type="text"
-                        classNames={{
-                          base: "w-full",
-                          inputWrapper: "h-12",
-                        }}
-                        startContent={
-                          <p className="font-medium text-stone-300">$</p>
-                        }
-                        value={moneyFormatter.format(
-                          Number(watch("money.usd.cash1")) *
-                            Number(watch("money.usd.rate1")) +
-                            Number(watch("money.usd.cash2")) *
-                              Number(watch("money.usd.rate2")),
-                        )}
-                        placeholder="Dólares totales"
-                        variant="bordered"
-                        size="md"
-                        radius="lg"
-                      />
                     </InputGroupSection>
 
                     <InputGroupSection title="Pesos colombianos">
                       <div className="flex gap-2">
-                        <Input
-                          aria-label="Pesos en efectivo"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
+                        <FormattedNumberInput
+                          control={control}
+                          name="money.cop.cash"
                           placeholder="Efectivo"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.cop?.cash)}
-                          errorMessage={errors.money?.cop?.cash?.message}
-                          {...register("money.cop.cash")}
                         />
                       </div>
                     </InputGroupSection>
 
                     <InputGroupSection title="Punto">
-                      <div className="flex gap-2">
+                      {posBatchesFields.map((field, index) => (
+                        <div key={field.id} className="flex items-start gap-2">
+                          {/* Input para el Número de Lote */}
+                          <div className="flex-1">
+                            <FormattedNumberInput
+                              control={control}
+                              name={`money.bs.pos_batches.${index}.batch_number`}
+                              placeholder={`Lote #${index + 1}`}
+                            />
+                          </div>
+
+                          {/* Input para el Monto */}
+                          <div className="flex-1">
+                            <FormattedNumberInput
+                              control={control}
+                              name={`money.bs.pos_batches.${index}.amount`}
+                              placeholder={"Monto (Bs)"}
+                            />
+                          </div>
+
+                          <Button
+                            isIconOnly
+                            color="danger"
+                            variant="flat"
+                            className="mt-2"
+                            onPress={() => remove(index)}
+                          >
+                            <IconTrash size={18} />
+                          </Button>
+                        </div>
+                      ))}
+
+                      <Button
+                        variant="flat"
+                        color="default"
+                        startContent={<IconPlus size={18} />}
+                        onPress={() => append({ batch_number: 0, amount: 0 })}
+                      >
+                        Añadir otro lote
+                      </Button>
+
+                      {/* <div className="flex gap-2">
                         <Input
                           type="number"
                           aria-label="Monto bs"
@@ -398,31 +383,18 @@ export default function CashierRegisterBalancePage() {
                           errorMessage={errors.money?.bs?.batch_number?.message}
                           {...register("money.bs.batch_number")}
                         />
-                      </div>
+                      </div> */}
                     </InputGroupSection>
 
-                    <InputGroupSection title="Pago móvil">
+                    {/* <InputGroupSection title="Pago móvil">
                       <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          aria-label="Monto bs"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Monto bs"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.bs?.mobile)}
-                          errorMessage={errors.money?.bs?.mobile?.message}
-                          {...register("money.bs.mobile")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.bs.mobile"}
+                          placeholder={"Monto (Bs)"}
                         />
                       </div>
-                    </InputGroupSection>
+                    </InputGroupSection> */}
                   </div>
 
                   <div className="py-4 w-full">
@@ -479,7 +451,7 @@ export default function CashierRegisterBalancePage() {
                           $
                           {moneyFormatter.format(
                             Number(watch("money.bs.mobile")) +
-                              Number(watch("money.bs.pos")),
+                              Number(bsPosTotal),
                           )}
                         </p>
                       </div>

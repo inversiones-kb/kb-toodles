@@ -37,6 +37,13 @@ export const API_MESSAGES = {
     error: "Error al crear el gasto",
   },
 
+  mobilePayments: {
+    created: "Pago móvil creado correctamente",
+    updated: "Pago móvil actualizado correctamente",
+    deleted: "Pago móvil eliminado correctamente",
+    error: "Error al crear el pago móvil",
+  },
+
   users: {
     created: "Usuario creado correctamente",
     updated: "Usuario actualizado correctamente",

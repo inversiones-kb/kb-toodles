@@ -31,19 +31,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const SalesChart = () => {
-  const user = useAuthStore((store) => store.user);
-  const branch = useParams().branch as BusinessBranch;
+interface Props {
+  isLoading: boolean;
+  data: RegisterBalance[];
+}
 
-  const { data, isLoading } = useCollectionQuery<RegisterBalance>(
-    "register_balances",
-    [
-      where("branch", "==", branch),
-      where("status", "in", ["CHECKED", "PENDING"]),
-    ],
-    [user?.id],
-  );
-
+const SalesChart = ({ isLoading, data }: Props) => {
   const salesData = useMemo(() => generateSalesChartData(data), [data]);
 
   if (isLoading)
@@ -62,7 +55,7 @@ const SalesChart = () => {
 
   return (
     <AreaChart
-      className="w-full h-full overflow-hidden min-h-72"
+      className="w-full h-full overflow-hidden max-sm:min-h-72"
       responsive
       data={salesData}
       margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
@@ -77,7 +70,14 @@ const SalesChart = () => {
       <XAxis dataKey="name" fontSize={14} tickLine={false} axisLine={false} />
       <YAxis
         width="auto"
-        tickFormatter={(value) => `$${value / 1000}k`}
+        tickFormatter={(value) =>
+          new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: "USD",
+            notation: "compact", // 🔥 Esto hace la magia de poner K o M
+            maximumFractionDigits: 1,
+          }).format(value)
+        }
         stroke="#888888"
         fontSize={14}
         tickLine={false}

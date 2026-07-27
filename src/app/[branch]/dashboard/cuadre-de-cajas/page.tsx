@@ -65,6 +65,9 @@ export default function RegisterBalancesPage() {
       constraints.push(where("checkout_number", "==", filters.checkout_number));
     }
 
+    constraints.push(orderBy("created_at", "desc"));
+    constraints.push(orderBy("checkout_number", "asc"));
+
     return constraints;
   }, [filters]);
 
@@ -93,6 +96,9 @@ export default function RegisterBalancesPage() {
     columnKey,
     handleDelete,
   ) => {
+    const usd1 = item.money ? item.money.usd.cash1 * item.money.usd.rate1 : 0;
+    const usd2 = item.money ? item.money.usd.cash2 * item.money.usd.rate2 : 0;
+
     switch (columnKey) {
       case "checkout_number":
         return `#${item.checkout_number}`;
@@ -100,9 +106,6 @@ export default function RegisterBalancesPage() {
         return item.is_fiscal ? "Fiscal" : "No Fiscal";
       case "sales":
         if (!item.money) return "--";
-
-        const usd1 = item.money.usd.cash1 * item.money.usd.rate1;
-        const usd2 = item.money.usd.cash2 * item.money.usd.rate2;
 
         return `COP ${moneyFormatter.format(item.money.cop.cash + (usd1 + usd2) + item.total_expenses)}`;
 
@@ -143,7 +146,9 @@ export default function RegisterBalancesPage() {
       case "diff":
         if (item.status !== "CHECKED") return "--";
         if (!item.money) return "--";
-        const totalCop = item.money.cop.cash + item.total_expenses;
+
+        const totalCop =
+          item.money.cop.cash + usd1 + usd2 + item.total_expenses;
         const diff = totalCop - item.money.cop.system;
         const isBalanced = Math.abs(diff) <= 100; // 100 cop grace interval
 

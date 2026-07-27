@@ -484,7 +484,7 @@ export default function CreateRegisterBalancePage() {
                     {...register("money.bs.pos_system")}
                   />
 
-                  <Input
+                  {/* <Input
                     type="number"
                     aria-label="Número de lote"
                     classNames={{
@@ -501,7 +501,7 @@ export default function CreateRegisterBalancePage() {
                     isInvalid={Boolean(errors.money?.bs?.batch_number)}
                     errorMessage={errors.money?.bs?.batch_number?.message}
                     {...register("money.bs.batch_number")}
-                  />
+                  /> */}
                 </div>
               </InputGroupSection>
 

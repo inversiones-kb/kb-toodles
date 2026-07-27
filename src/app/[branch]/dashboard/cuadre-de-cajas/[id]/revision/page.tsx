@@ -36,6 +36,7 @@ import { Expense } from "@/validations/expense.validations";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
 import { dateToString, formatOnlyTime } from "@/utils/dateUtils";
 import { transformExpense } from "@/utils/normalizers/normalizeExpenses";
+import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
 
 export default function CheckRegisterBalancePage() {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
@@ -60,6 +61,7 @@ export default function CheckRegisterBalancePage() {
 
   const {
     register,
+    control,
     setValue,
     watch,
     reset,
@@ -71,6 +73,11 @@ export default function CheckRegisterBalancePage() {
     defaultValues: {
       is_fiscal: false,
       checkout_number: 1,
+      money: {
+        bs: {
+          pos_batches: [],
+        },
+      },
     },
   });
 
@@ -119,6 +126,8 @@ export default function CheckRegisterBalancePage() {
     Number(watch("money.usd.rate1")) * Number(watch("money.usd.cash1"));
   const usd2 =
     Number(watch("money.usd.rate2")) * Number(watch("money.usd.cash2"));
+
+  const posBatches = watch("money.bs.pos_batches");
 
   return (
     <main className="flex gap-5 h-full">
@@ -298,42 +307,15 @@ export default function CheckRegisterBalancePage() {
                   <div className="bg-layer-3 w-full gap-2 rounded-xl p-3 flex flex-col">
                     <InputGroupSection title="Dólares">
                       <div className="flex gap-2">
-                        <Input
-                          aria-label="Tasa Dólares 1"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Tasa 1"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.usd?.rate1)}
-                          errorMessage={errors.money?.usd?.rate1?.message}
-                          {...register("money.usd.rate1")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.usd.rate1"}
+                          placeholder={"Tasa 1"}
                         />
-
-                        <Input
-                          aria-label="Dólares en efectivo 1"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Efectivo 1"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.usd?.cash1)}
-                          errorMessage={errors.money?.usd?.cash1?.message}
-                          {...register("money.usd.cash1")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.usd.cash1"}
+                          placeholder={"Efectivo 1"}
                         />
 
                         <Input
@@ -355,42 +337,15 @@ export default function CheckRegisterBalancePage() {
                         />
                       </div>
                       <div className="flex gap-2">
-                        <Input
-                          aria-label="Tasa Dólares 2"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Tasa 2"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.usd?.rate2)}
-                          errorMessage={errors.money?.usd?.rate2?.message}
-                          {...register("money.usd.rate2")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.usd.rate2"}
+                          placeholder={"Tasa 2"}
                         />
-
-                        <Input
-                          aria-label="Dólares en efectivo 2"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Efectivo 2"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.usd?.cash2)}
-                          errorMessage={errors.money?.usd?.cash2?.message}
-                          {...register("money.usd.cash2")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.usd.cash2"}
+                          placeholder={"Efectivo 2"}
                         />
 
                         <Input
@@ -421,7 +376,7 @@ export default function CheckRegisterBalancePage() {
                           inputWrapper: "h-12",
                         }}
                         startContent={
-                          <p className="font-medium text-stone-300">$</p>
+                          <p className="font-medium text-stone-300">COP</p>
                         }
                         value={moneyFormatter.format(
                           Number(watch("money.usd.cash1")) *
@@ -438,147 +393,74 @@ export default function CheckRegisterBalancePage() {
 
                     <InputGroupSection title="Pesos colombianos">
                       <div className="flex gap-2">
-                        <Input
-                          aria-label="Pesos en efectivo"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Efectivo"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.cop?.cash)}
-                          errorMessage={errors.money?.cop?.cash?.message}
-                          {...register("money.cop.cash")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.cop.cash"}
+                          placeholder={"Efectivo"}
                         />
 
-                        <Input
-                          aria-label="Pesos en sistema"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Sistema"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.cop?.system)}
-                          errorMessage={errors.money?.cop?.system?.message}
-                          {...register("money.cop.system")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.cop.system"}
+                          placeholder={"Sistema"}
                         />
                       </div>
                     </InputGroupSection>
 
-                    <InputGroupSection title="Punto">
+                    <InputGroupSection
+                      title={`Punto${!posBatches.length ? " (Sin lotes)" : ""}`}
+                    >
                       <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          aria-label="Monto bs"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Monto bs"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.bs?.pos)}
-                          errorMessage={errors.money?.bs?.pos?.message}
-                          {...register("money.bs.pos")}
+                        <FormattedNumberInput
+                          isDisabled
+                          control={control}
+                          name={"money.bs.pos"}
+                          placeholder={"Monto bs"}
                         />
 
-                        <Input
-                          aria-label="Bolívares en sistema"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Sistema"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.bs?.pos_system)}
-                          errorMessage={errors.money?.bs?.pos_system?.message}
-                          {...register("money.bs.pos_system")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.bs.pos_system"}
+                          placeholder={"Sistema"}
                         />
+                      </div>
 
-                        <Input
-                          type="number"
-                          aria-label="Número de lote"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12 w-fit",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">#</p>
-                          }
-                          placeholder="Lote"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.bs?.batch_number)}
-                          errorMessage={errors.money?.bs?.batch_number?.message}
-                          {...register("money.bs.batch_number")}
-                        />
+                      {/* <p className="text-sm text-soft-light">Lotes:</p> */}
+
+                      <div className="flex flex-col gap-1">
+                        {posBatches.length
+                          ? posBatches.map((batch, i) => (
+                              <div
+                                key={i}
+                                className="w-full bg-light/5 p-2 rounded-xl flex justify-between items-center"
+                              >
+                                <p className="text-soft-light text-sm">
+                                  Lote{" "}
+                                  <span className="text-light">
+                                    #{batch.batch_number}
+                                  </span>
+                                </p>
+                                <p className="text-sm font-normal text-soft-light">
+                                  {moneyFormatter.format(batch.amount)} bs
+                                </p>
+                              </div>
+                            ))
+                          : null}
                       </div>
                     </InputGroupSection>
 
                     <InputGroupSection title="Pago móvil">
                       <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          aria-label="Monto bs"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Monto bs"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.bs?.mobile)}
-                          errorMessage={errors.money?.bs?.mobile?.message}
-                          {...register("money.bs.mobile")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.bs.mobile"}
+                          placeholder={"Monto bs"}
                         />
 
-                        <Input
-                          aria-label="Bolívares en sistema"
-                          type="number"
-                          classNames={{
-                            base: "w-full",
-                            inputWrapper: "h-12",
-                          }}
-                          startContent={
-                            <p className="font-medium text-stone-300">$</p>
-                          }
-                          placeholder="Sistema"
-                          variant="bordered"
-                          size="md"
-                          radius="lg"
-                          isInvalid={Boolean(errors.money?.bs?.mobile_system)}
-                          errorMessage={
-                            errors.money?.bs?.mobile_system?.message
-                          }
-                          {...register("money.bs.mobile_system")}
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.bs.mobile_system"}
+                          placeholder={"Sistema"}
                         />
                       </div>
                     </InputGroupSection>

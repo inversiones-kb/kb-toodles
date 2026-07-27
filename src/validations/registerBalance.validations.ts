@@ -16,6 +16,7 @@ export const createRegisterBalanceSchema = z.object({
   status: z.enum(REGISTER_BALANCE_STATUSES, { message: "Estado inválida" }),
   z_report_number: z.coerce.number().optional(),
   total_expenses: z.number(),
+  total_mobile_payments: z.number(),
   money: z.object({
     cop: z.object({
       cash: z.coerce.number().min(0, "El valor mínimo es 0"),
@@ -24,19 +25,34 @@ export const createRegisterBalanceSchema = z.object({
     usd: z.object({
       cash1: z.coerce.number().min(0, "El valor mínimo es 0"),
       cash2: z.coerce.number().min(0, "El valor mínimo es 0"),
-      rate1: z.coerce.number().min(1, "El valor mínimo es 1"),
-      rate2: z.coerce.number().min(1, "El valor mínimo es 1"),
+      rate1: z.coerce
+        .number({
+          invalid_type_error: "Debe ingresar una tasa válida", // Atrapa el NaN cuando está vacío
+          required_error: "Este campo es obligatorio", // Atrapa si el campo ni siquiera se envió
+        })
+        .min(1, "El valor mínimo es 1"),
+      rate2: z.coerce
+        .number({
+          invalid_type_error: "Debe ingresar una tasa válida", // Atrapa el NaN cuando está vacío
+          required_error: "Este campo es obligatorio", // Atrapa si el campo ni siquiera se envió
+        })
+        .min(1, "El valor mínimo es 1"),
     }),
-    bs: z
-      .object({
-        pos: z.coerce.number().min(0, "El valor mínimo es 0"),
-        pos_system: z.coerce.number().min(0, "El valor mínimo es 0"),
-        batch_number: z.coerce.number().int().optional(),
+    bs: z.object({
+      pos: z.coerce.number().min(0, "El valor mínimo es 0"),
+      pos_system: z.coerce.number().min(0, "El valor mínimo es 0"),
+      /* batch_number: z.coerce.number().int().optional(), */
 
-        mobile: z.coerce.number().min(0, "El valor mínimo es 0"),
-        mobile_system: z.coerce.number().min(0, "El valor mínimo es 0"),
-      })
-      .optional(),
+      pos_batches: z.array(
+        z.object({
+          batch_number: z.coerce.number().int(),
+          amount: z.coerce.number().min(0, "El valor no puede ser negativo"),
+        }),
+      ),
+
+      mobile: z.coerce.number().min(0, "El valor mínimo es 0"),
+      mobile_system: z.coerce.number().min(0, "El valor mínimo es 0"),
+    }),
   }),
 
   branch: z.enum(BUSINESS_BRANCHES, { message: "Sucursal inválida" }),
