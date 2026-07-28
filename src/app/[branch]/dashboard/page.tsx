@@ -21,7 +21,7 @@ import SalesChart from "@/components/home/SalesChart";
 import { RegisterBalance } from "@/validations/registerBalance.validations";
 import { useParams } from "next/navigation";
 import { BusinessBranch } from "@/types/businessBranch.types";
-import { where } from "firebase/firestore";
+import { orderBy, where } from "firebase/firestore";
 import CurrencySalesChart from "@/components/home/CurrencySalesChart";
 import DiffSalesChart from "@/components/home/DiffSalesChart";
 
@@ -40,6 +40,7 @@ export default function DashboardPage() {
     [
       where("branch", "==", branch),
       where("status", "in", ["CHECKED", "PENDING"]),
+      orderBy("created_at", "asc"),
     ],
     [user?.id],
   );

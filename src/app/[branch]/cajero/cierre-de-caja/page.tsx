@@ -2,7 +2,19 @@
 
 import CardTitle from "@/components/home/CardTitle";
 
-import { Button, Form, Input, Spinner, Switch } from "@heroui/react";
+import {
+  Button,
+  Form,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Spinner,
+  Switch,
+  useDisclosure,
+} from "@heroui/react";
 import {
   Controller,
   SubmitHandler,
@@ -47,6 +59,11 @@ import { MobilePayment } from "@/validations/mobile_payment.validations";
 export default function CashierRegisterBalancePage() {
   const user = useAuthStore((store) => store.user);
   const branch = useParams().branch as BusinessBranch;
+
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const [pendingData, setPendingData] = useState<RegisterBalanceInput | null>(
+    null,
+  );
 
   const {
     data: activeShifts,
@@ -121,8 +138,14 @@ export default function CashierRegisterBalancePage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useBranchRouter();
 
-  const onSubmit: SubmitHandler<RegisterBalanceInput> = async (data) => {
-    console.log(data);
+  const handlePreSubmit: SubmitHandler<RegisterBalanceInput> = async (data) => {
+    setPendingData(data);
+    onOpen();
+    return;
+  };
+
+  const onSubmit = async () => {
+    if (!pendingData) return;
 
     setIsLoading(true);
 
@@ -130,10 +153,10 @@ export default function CashierRegisterBalancePage() {
 
     const res = await updateRegisterBalance(shift.id, {
       closed_at: new Date(),
-      money: data.money,
-      z_report_number: data.z_report_number,
-      is_fiscal: data.is_fiscal,
-      status: data.status,
+      money: pendingData.money,
+      z_report_number: pendingData.z_report_number,
+      is_fiscal: pendingData.is_fiscal,
+      status: pendingData.status,
     });
 
     setIsLoading(false);
@@ -218,7 +241,36 @@ export default function CashierRegisterBalancePage() {
         />
 
         <div className="w-full overflow-y-auto h-full flex justify-center p-8 pb-8">
-          <Form onSubmit={handleSubmit(onSubmit)} className="w-full h-fit">
+          <Form
+            onSubmit={handleSubmit(handlePreSubmit)}
+            className="w-full h-fit"
+          >
+            {/* Confirmation Modal */}
+            <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+              <ModalContent>
+                {(onClose) => (
+                  <>
+                    <ModalHeader className="flex flex-col gap-1">
+                      ¿Confirmar el cierre de caja?
+                    </ModalHeader>
+                    <ModalBody>
+                      <p className="text-sm text-soft-light font-light">
+                        Esta acción no se puede deshacer
+                      </p>
+                    </ModalBody>
+                    <ModalFooter>
+                      <Button color="danger" variant="light" onPress={onClose}>
+                        Cerrar
+                      </Button>
+                      <Button color="primary" onPress={onSubmit}>
+                        Confirmar cierre
+                      </Button>
+                    </ModalFooter>
+                  </>
+                )}
+              </ModalContent>
+            </Modal>
+
             {shiftLoading ? (
               <div className="w-full flex justify-center">
                 <Spinner label="Cargando turno..." />
