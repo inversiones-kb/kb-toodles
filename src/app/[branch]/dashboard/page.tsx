@@ -24,6 +24,7 @@ import { BusinessBranch } from "@/types/businessBranch.types";
 import { orderBy, where } from "firebase/firestore";
 import CurrencySalesChart from "@/components/home/CurrencySalesChart";
 import DiffSalesChart from "@/components/home/DiffSalesChart";
+import ExpensesChart from "@/components/home/ExpensesChart";
 
 export default function DashboardPage() {
   const user = useAuthStore((store) => store.user);
@@ -93,39 +94,9 @@ export default function DashboardPage() {
 
       {/* NOTEPAD SECTION */}
       <section className="row-span-3 max-sm:hidden bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconNote} title="Notas" backButton={false} />
+        <CardTitle Icon={IconNote} title="Gastos" backButton={false} />
 
-        <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
-          {notesLoading ? <Spinner /> : null}
-
-          {!notesLoading && notes ? (
-            notes.length ? (
-              notes.map((note) => (
-                <HomeNoteCard
-                  key={note.id}
-                  title={note.title}
-                  text={note.text}
-                />
-              ))
-            ) : (
-              <EmptyState
-                title="No hay notas"
-                actionContent={
-                  <Button
-                    as={BranchLink}
-                    href="/dashboard/notas/crear"
-                    size="sm"
-                    variant="flat"
-                    color="secondary"
-                  >
-                    <IconNote />
-                    Crear
-                  </Button>
-                }
-              />
-            )
-          ) : null}
-        </div>
+        <ExpensesChart data={data} isLoading={isLoading} />
       </section>
 
       {/* SEASON SECTION */}

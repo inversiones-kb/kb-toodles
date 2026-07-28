@@ -73,6 +73,7 @@ export default function CheckRegisterBalancePage() {
     defaultValues: {
       is_fiscal: false,
       checkout_number: 1,
+      total_mobile_payments: 0,
       money: {
         bs: {
           pos_batches: [],
@@ -89,6 +90,8 @@ export default function CheckRegisterBalancePage() {
     onOpen();
     return;
   };
+
+  console.log(errors);
 
   const onSubmit = async () => {
     if (!pendingData || !data) return;
@@ -115,7 +118,12 @@ export default function CheckRegisterBalancePage() {
 
   useEffect(() => {
     if (!docIsLoading && data) {
-      reset(data);
+      let newData = { ...data };
+
+      newData.money.bs.pos_system =
+        newData.money.bs.pos_system || newData.money.bs.pos;
+
+      reset(newData);
       // populate form values on start
     }
   }, [docIsLoading]);
@@ -166,9 +174,16 @@ export default function CheckRegisterBalancePage() {
               </ModalContent>
             </Modal>
 
-            <h2 className="text-2xl text-center w-full font-semibold mb-4">
-              Completa el formulario
-            </h2>
+            <div className="flex flex-col gap-0 items-center w-full">
+              <h2 className="text-2xl text-center w-full font-semibold">
+                Completa el formulario
+              </h2>
+              <p className="text-sm text-soft-light">
+                {dateToString(data?.created_at, "DD/MM/YYYY")}
+                {" - "}
+                {data?.id}
+              </p>
+            </div>
 
             {!docIsLoading ? (
               !data ? (
