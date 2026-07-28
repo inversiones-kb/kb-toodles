@@ -93,7 +93,7 @@ export default function DashboardPage() {
       </section>
 
       {/* NOTEPAD SECTION */}
-      <section className="row-span-3 max-sm:hidden bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
+      <section className="row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
         <CardTitle Icon={IconNote} title="Gastos" backButton={false} />
 
         <ExpensesChart data={data} isLoading={isLoading} />
