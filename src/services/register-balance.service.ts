@@ -32,6 +32,7 @@ export const openRegisterBalance = async (
     });
     return {
       success: true,
+      data: newDoc.id,
       message: API_MESSAGES.registerBalances.created,
     };
   } catch (error) {

@@ -9,6 +9,7 @@ import {
   IconDeviceMobile,
   IconPennant,
   IconPrinter,
+  IconStatusChange,
 } from "@tabler/icons-react";
 
 import {
@@ -20,6 +21,7 @@ import {
   ModalFooter,
   ModalHeader,
   Spinner,
+  Tooltip,
   useDisclosure,
 } from "@heroui/react";
 import Link from "next/link";
@@ -47,6 +49,7 @@ import { logoutUser } from "@/services/auth.service";
 import BranchLink from "@/components/general/BranchLink";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
 import { BusinessBranch } from "@/types/businessBranch.types";
+import { useCheckoutStore } from "@/store/useCheckoutStore";
 
 export default function CashierPage() {
   const branch = useParams().branch as BusinessBranch;
@@ -72,7 +75,12 @@ export default function CashierPage() {
     [user?.uid], // 🔥 CRUCIAL: Solo se vuelve a ejecutar si el usuario cambia
   );
 
-  const shift = activeShifts[0];
+  const { currentShift, setCurrentShift, clearCurrentShift } =
+    useCheckoutStore();
+
+  const shift = activeShifts.find(
+    (e) => e.checkout_number === currentShift?.checkout_number,
+  );
 
   const { data: expenses, isLoading: expensesLoading } =
     useCollectionQuery<Expense>(
@@ -83,6 +91,17 @@ export default function CashierPage() {
 
   const handleOpenShift = async () => {
     if (!user || !branch) return;
+    const existingShift = activeShifts.find(
+      (e) => e.checkout_number === checkoutNumber,
+    );
+
+    if (existingShift) {
+      setCurrentShift({
+        shift_id: existingShift.id,
+        checkout_number: existingShift.checkout_number,
+      });
+      return;
+    }
 
     setIsLoading(true);
     const res = await openRegisterBalance({
@@ -107,6 +126,11 @@ export default function CashierPage() {
       return toast.error(res.message);
     }
 
+    setCurrentShift({
+      shift_id: res.data,
+      checkout_number: checkoutNumber,
+    });
+
     toast.success("Turno abierto con éxito");
 
     refetch();
@@ -120,6 +144,7 @@ export default function CashierPage() {
     if (result.success) {
       // 2. Limpiamos la memoria del cliente (Zustand)
       clearAuth();
+      clearCurrentShift();
 
       // 3. Expulsamos al usuario a la pantalla de login
       nextRouter.push("/");
@@ -190,7 +215,20 @@ export default function CashierPage() {
                   </p>
                 </div>
 
-                <p>Caja #{shift.checkout_number}</p>
+                <div className="flex items-center gap-2">
+                  <p className="">Caja #{shift.checkout_number}</p>
+                  <Tooltip content={"Cambiar caja"}>
+                    <Button
+                      onPress={() => clearCurrentShift()}
+                      size="sm"
+                      variant="light"
+                      className="text-soft-light"
+                      isIconOnly
+                    >
+                      <IconStatusChange />
+                    </Button>
+                  </Tooltip>
+                </div>
               </div>
 
               {/*  <div className="flex flex-row gap-4 items-stretch">
@@ -329,7 +367,13 @@ export default function CashierPage() {
                 {!isLoading ? (
                   <IconPennant className="min-w-12 min-h-12" />
                 ) : null}
-                <p className="text-light">Abrir turno</p>
+                <p className="text-light">
+                  {activeShifts.find(
+                    (e) => e.checkout_number === checkoutNumber,
+                  )
+                    ? "Continuar turno"
+                    : "Abrir turno"}
+                </p>
               </Button>
             </div>
           )
