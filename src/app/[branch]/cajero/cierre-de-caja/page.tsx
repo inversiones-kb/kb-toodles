@@ -205,6 +205,7 @@ export default function CashierRegisterBalancePage() {
     Number(watch("money.usd.rate2")) * Number(watch("money.usd.cash2"));
 
   const totalExpenses = expenses.reduce((acc, item) => acc + item.amount, 0);
+
   const totalMobilePayments = mobilePayments.reduce(
     (acc, item) => acc + item.amount,
     0,
@@ -228,7 +229,9 @@ export default function CashierRegisterBalancePage() {
 
   useEffect(() => {
     setValue("money.bs.pos", bsPosTotal);
-  }, [bsPosTotal]);
+
+    setValue("money.bs.mobile", totalMobilePayments);
+  }, [bsPosTotal, totalMobilePayments]);
 
   return (
     <main className="flex gap-5 h-full p-8 justify-center items-center">
@@ -486,6 +489,45 @@ export default function CashierRegisterBalancePage() {
                         ) : (
                           <p className="text-sm text-soft-light">
                             No hay gastos registrados
+                          </p>
+                        )
+                      ) : null}
+                    </InputGroupSection>
+                  </div>
+
+                  <div className="py-4 w-full">
+                    <InputGroupSection title="Datos de los pago móvil">
+                      {mobilePaymentsLoading ? (
+                        <Spinner label="Cargando pagos móvil..." />
+                      ) : null}
+
+                      {!mobilePaymentsLoading && mobilePayments ? (
+                        mobilePayments.length ? (
+                          <div className="flex flex-col gap-1.5">
+                            {mobilePayments.map((payment) => (
+                              <div
+                                key={payment.id}
+                                className="rounded-lg border border-stone-700 bg-layer-3 w-full items-center flex px-2 py-2"
+                              >
+                                <div className="flex flex-col flex-1">
+                                  <p className="text-small text-soft-light">
+                                    {dateToString(
+                                      payment.created_at,
+                                      "DD/MM/YYYY",
+                                    )}{" "}
+                                    {formatOnlyTime(payment.created_at)}
+                                  </p>
+                                </div>
+
+                                <p className="text-sm">
+                                  {moneyFormatter.format(payment.amount)} bs
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-soft-light">
+                            No hay pagos móvil registrados
                           </p>
                         )
                       ) : null}

@@ -37,6 +37,8 @@ import { useBranchRouter } from "@/hooks/useBranchRouter";
 import { dateToString, formatOnlyTime } from "@/utils/dateUtils";
 import { transformExpense } from "@/utils/normalizers/normalizeExpenses";
 import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
+import { MobilePayment } from "@/validations/mobile_payment.validations";
+import { transformMobilePayment } from "@/utils/normalizers/normalizeMobilePayments";
 
 export default function CheckRegisterBalancePage() {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
@@ -57,6 +59,14 @@ export default function CheckRegisterBalancePage() {
       [where("shift_id", "==", data?.id || "")],
       [data?.id],
       transformExpense,
+    );
+
+  const { data: mobilePayments, isLoading: mobilePaymentsLoading } =
+    useCollectionQuery<MobilePayment>(
+      "mobile_payments",
+      [where("shift_id", "==", data?.id || "")],
+      [data?.id],
+      transformMobilePayment,
     );
 
   const {
@@ -116,17 +126,28 @@ export default function CheckRegisterBalancePage() {
     return router.push("/dashboard/cuadre-de-cajas");
   };
 
+  const totalMobilePayments = mobilePayments.reduce(
+    (acc, item) => acc + item.amount,
+    0,
+  );
+
   useEffect(() => {
-    if (!docIsLoading && data) {
+    if (!docIsLoading && data && !mobilePaymentsLoading) {
       let newData = { ...data };
 
-      newData.money.bs.pos_system =
-        newData.money.bs.pos_system || newData.money.bs.pos;
+      if (newData.money) {
+        newData.money.bs.pos_system =
+          newData.money.bs.pos_system || newData.money.bs.pos;
+      }
+
+      if (newData.money.bs.mobile != totalMobilePayments) {
+        newData.money.bs.mobile = totalMobilePayments;
+      }
 
       reset(newData);
       // populate form values on start
     }
-  }, [docIsLoading]);
+  }, [docIsLoading, mobilePaymentsLoading]);
 
   const isFiscal = watch("is_fiscal");
 
@@ -467,6 +488,7 @@ export default function CheckRegisterBalancePage() {
                     <InputGroupSection title="Pago móvil">
                       <div className="flex gap-2">
                         <FormattedNumberInput
+                          isDisabled
                           control={control}
                           name={"money.bs.mobile"}
                           placeholder={"Monto bs"}
@@ -524,65 +546,107 @@ export default function CheckRegisterBalancePage() {
                     ) : null}
                   </InputGroupSection>
 
-                  <InputGroupSection title="Resumen de caja">
-                    <div className="flex flex-col">
-                      <div className="flex items-center justify-between gap-4">
-                        <p className="font-light text-sm text-soft-light">
-                          Total de bolívares
-                        </p>
-                        <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
-                        <p className="font-light text-sm text-soft-light">
-                          $
-                          {moneyFormatter.format(
-                            Number(watch("money.bs.mobile")) +
-                              Number(watch("money.bs.pos")),
-                          )}
-                        </p>
-                      </div>
+                  <InputGroupSection title="Datos de los pago móvil">
+                    {mobilePaymentsLoading ? (
+                      <Spinner label="Cargando pagos móvil..." />
+                    ) : null}
 
-                      <div className="flex items-center justify-between gap-4">
-                        <p className="font-light text-sm text-soft-light">
-                          Total de dólares
-                        </p>
-                        <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
-                        <p className="font-light text-sm text-soft-light">
-                          ${moneyFormatter.format(Number(usd1 + usd2))}
-                        </p>
-                      </div>
+                    {!mobilePaymentsLoading && mobilePayments ? (
+                      mobilePayments.length ? (
+                        <div className="flex flex-col gap-1.5">
+                          {mobilePayments.map((payment) => (
+                            <div
+                              key={payment.id}
+                              className="rounded-lg border border-stone-700 bg-layer-3 w-full items-center flex px-2 py-2"
+                            >
+                              <div className="flex flex-col flex-1">
+                                <p className="text-small text-soft-light">
+                                  {dateToString(
+                                    payment.created_at,
+                                    "DD/MM/YYYY",
+                                  )}{" "}
+                                  {formatOnlyTime(payment.created_at)}
+                                </p>
+                              </div>
 
-                      <div className="flex items-center justify-between gap-4">
-                        <p className="font-light text-sm text-soft-light">
-                          Total de gastos
+                              <p className="text-sm">
+                                {moneyFormatter.format(payment.amount)} bs
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-soft-light">
+                          No hay pagos móvil registrados
                         </p>
-                        <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
-                        <p className="font-light text-sm text-soft-light">
-                          ${moneyFormatter.format(Number(data.total_expenses))}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between gap-4">
-                        <p className="text-light text-lg">Venta del día</p>
-                        <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
-                        <p className="text-light text-lg">
-                          $
-                          {moneyFormatter.format(
-                            Number(watch("money.cop.cash")) +
-                              (usd1 + usd2) +
-                              data.total_expenses,
-                          )}
-                        </p>
-                      </div>
-                    </div>
+                      )
+                    ) : null}
                   </InputGroupSection>
 
-                  <Button
-                    type="submit"
-                    color="primary"
-                    className="w-full mt-4"
-                    isLoading={isLoading}
-                  >
-                    Confirmar cierre de caja
-                  </Button>
+                  {data.money ? (
+                    <InputGroupSection title="Resumen de caja">
+                      <div className="flex flex-col">
+                        <div className="flex items-center justify-between gap-4">
+                          <p className="font-light text-sm text-soft-light">
+                            Total de bolívares
+                          </p>
+                          <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
+                          <p className="font-light text-sm text-soft-light">
+                            $
+                            {moneyFormatter.format(
+                              Number(watch("money.bs.mobile")) +
+                                Number(watch("money.bs.pos")),
+                            )}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <p className="font-light text-sm text-soft-light">
+                            Total de dólares
+                          </p>
+                          <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
+                          <p className="font-light text-sm text-soft-light">
+                            ${moneyFormatter.format(Number(usd1 + usd2))}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <p className="font-light text-sm text-soft-light">
+                            Total de gastos
+                          </p>
+                          <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
+                          <p className="font-light text-sm text-soft-light">
+                            $
+                            {moneyFormatter.format(Number(data.total_expenses))}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <p className="text-light text-lg">Venta del día</p>
+                          <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
+                          <p className="text-light text-lg">
+                            $
+                            {moneyFormatter.format(
+                              Number(watch("money.cop.cash")) +
+                                (usd1 + usd2) +
+                                Number(data.total_expenses),
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    </InputGroupSection>
+                  ) : null}
+
+                  {data.status === "PENDING" ? (
+                    <Button
+                      type="submit"
+                      color="primary"
+                      className="w-full mt-4"
+                      isLoading={isLoading}
+                    >
+                      Confirmar cierre de caja
+                    </Button>
+                  ) : null}
                 </>
               )
             ) : null}
