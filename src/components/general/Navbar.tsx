@@ -137,11 +137,19 @@ const Content = () => {
           className="w-10 h-auto"
           src={LogoImage}
         />
-        <p
-          className={clsx(["transition-opacity", { "opacity-0": isCollapsed }])}
-        >
-          Toddles
-        </p>
+        <div className="flex flex-col gap-0">
+          <p
+            className={clsx([
+              "transition-opacity leading-tight",
+              { "opacity-0": isCollapsed },
+            ])}
+          >
+            Toddles
+          </p>
+          <p className="text-sm leading-tight font-light text-soft-light">
+            {BUSINESS_BRANCH_MAP[branch].title}
+          </p>
+        </div>
       </BranchLink>
 
       <Divider className="bg-layer-3 my-2" />
