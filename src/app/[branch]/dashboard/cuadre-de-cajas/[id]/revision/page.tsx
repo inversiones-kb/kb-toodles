@@ -138,16 +138,16 @@ export default function CheckRegisterBalancePage() {
       if (newData.money) {
         newData.money.bs.pos_system =
           newData.money.bs.pos_system || newData.money.bs.pos;
-      }
 
-      if (newData.money.bs.mobile != totalMobilePayments) {
-        newData.money.bs.mobile = totalMobilePayments;
+        if (newData.money.bs.mobile != totalMobilePayments) {
+          newData.money.bs.mobile = totalMobilePayments;
+        }
       }
 
       reset(newData);
       // populate form values on start
     }
-  }, [docIsLoading, mobilePaymentsLoading]);
+  }, [docIsLoading, mobilePaymentsLoading, totalMobilePayments, data]);
 
   const isFiscal = watch("is_fiscal");
 
@@ -637,7 +637,7 @@ export default function CheckRegisterBalancePage() {
                     </InputGroupSection>
                   ) : null}
 
-                  {data.status === "PENDING" ? (
+                  {data.status !== "OPEN" ? (
                     <Button
                       type="submit"
                       color="primary"

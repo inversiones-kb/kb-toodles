@@ -11,6 +11,8 @@ import {
   RangeValue,
   Select,
   SelectItem,
+  Tab,
+  Tabs,
 } from "@heroui/react";
 import DateRangePicker from "@/components/forms/DateRangePicker";
 import { IconAdjustmentsHorizontal, IconSearch } from "@tabler/icons-react";
@@ -24,6 +26,7 @@ import { createRegisterBalanceSchema } from "@/validations/registerBalance.valid
 import {
   REGISTER_BALANCE_STATUS_MAP,
   REGISTER_BALANCE_STATUS_OPTIONS,
+  RegisterBalanceStatus,
 } from "@/types/registerBalance.types";
 
 const validationSchema = createRegisterBalanceSchema
@@ -53,6 +56,7 @@ const RegisterBalanceToolbar = ({
     handleSubmit,
     watch,
     setValue,
+
     formState: { errors },
   } = useForm<RegisterBalanceFilters>({
     resolver: zodResolver(validationSchema),
@@ -62,6 +66,7 @@ const RegisterBalanceToolbar = ({
   });
 
   const onSubmit: SubmitHandler<RegisterBalanceFilters> = async (data) => {
+    console.log(data);
     setIsOpen(false);
 
     setFilters(data);
@@ -77,7 +82,7 @@ const RegisterBalanceToolbar = ({
       onSubmit={handleSubmit(onSubmit)}
       className="flex flex-row items-center gap-2"
     >
-      <Controller
+      {/*  <Controller
         name="search"
         control={control}
         render={({ field }) => (
@@ -97,9 +102,38 @@ const RegisterBalanceToolbar = ({
             }}
           />
         )}
-      />
+      /> */}
 
-     {/*  <DateRangePicker
+      <Tabs
+        aria-label="Monedas"
+        selectedKey={watch("status")}
+        onSelectionChange={(key) => {
+          setValue(
+            "status",
+            key === "" ? undefined : (key as RegisterBalanceStatus),
+          );
+
+          handleSubmit(onSubmit)();
+        }}
+        // radius="full" le da el aspecto redondeado clásico del segmented control
+        radius="full"
+        // color cambia el fondo del item activo (default es blanco/gris)
+        color="primary"
+        // variant="solid" es el estilo clásico (fondo oscuro, píldora clara)
+        variant="solid"
+        classNames={{
+          base: "w-full",
+          tabList: "w-full", // Se estira en móvil, se ajusta en desktop
+          cursor: "w-full shadow-sm", // La sombra de la píldora deslizante
+        }}
+      >
+        <Tab key={""} title={"Todos"} />
+        {REGISTER_BALANCE_STATUS_OPTIONS.map((status) => (
+          <Tab key={status.key} title={status.title} />
+        ))}
+      </Tabs>
+
+      {/*  <DateRangePicker
         onChange={(value) => {
           setValue("dateRange", value);
           handleSubmit(onSubmit)();
@@ -108,7 +142,7 @@ const RegisterBalanceToolbar = ({
         maxValue={today(getLocalTimeZone()) as any}
       /> */}
 
-      <Popover
+      {/*  <Popover
         placement="bottom-end"
         showArrow
         isOpen={isOpen}
@@ -177,10 +211,6 @@ const RegisterBalanceToolbar = ({
                 }}
                 errorMessage={errors.checkout_number?.message}
                 isInvalid={Boolean(errors.checkout_number?.message)}
-                /*  renderValue={(item) => {
-                  console.log(item);
-                  return <p>{item.toString()}</p>;
-                }} */
               >
                 {(animal) => <SelectItem>{animal.label}</SelectItem>}
               </Select>
@@ -198,7 +228,7 @@ const RegisterBalanceToolbar = ({
             </div>
           </div>
         </PopoverContent>
-      </Popover>
+      </Popover> */}
     </Form>
   );
 };

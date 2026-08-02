@@ -5,6 +5,7 @@ import { LoginInput } from "@/validations/auth.validations";
 import { User } from "@/validations/user.validations";
 import {
   browserSessionPersistence,
+  browserLocalPersistence,
   setPersistence,
   signInWithEmailAndPassword,
   signOut,
@@ -20,7 +21,7 @@ export const loginWithEmailAndPassword = async (
   data: LoginInput,
 ): Promise<CustomApiResponse> => {
   try {
-    await setPersistence(auth, browserSessionPersistence);
+    await setPersistence(auth, browserLocalPersistence);
 
     const userCredential = await signInWithEmailAndPassword(
       auth,
