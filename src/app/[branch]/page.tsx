@@ -2,16 +2,23 @@
 
 import { useCollectionQuery } from "@/hooks/useCollectionQuery";
 import { User } from "@/validations/user.validations";
-import { where } from "firebase/firestore";
+import { and, or, where } from "firebase/firestore";
 import LoginForm from "@/components/auth/LoginForm";
 import { Spinner } from "@heroui/react";
+import { BusinessBranch } from "@/types/businessBranch.types";
+import { useParams } from "next/navigation";
 
-export default function LoginPage() {
+export default function BranchLoginPage() {
+  const branch = useParams().branch as BusinessBranch;
+
   const { data: users, isLoading: usersIsLoading } = useCollectionQuery<User>(
     "users",
     [
-      where("is_active", "==", true),
-      where("is_deleted", "==", false),
+      and(
+        where("is_active", "==", true),
+        where("is_deleted", "==", false),
+        or(where("branch", "==", branch), where("role", "==", "ADMIN")),
+      ),
       /* where("employee_id", "!=", null), */
     ],
     [],

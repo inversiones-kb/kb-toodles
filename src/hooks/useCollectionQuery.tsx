@@ -6,6 +6,8 @@ import {
   QueryConstraint,
   DocumentData,
   QueryDocumentSnapshot,
+  QueryFilterConstraint,
+  QueryCompositeFilterConstraint,
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { normalizeFirestoreData } from "@/utils/firestore.utils";
@@ -25,7 +27,7 @@ interface UseCollectionQueryResult<T> {
  */
 export const useCollectionQuery = <T,>(
   collectionName: string,
-  constraints: QueryConstraint[],
+  constraints: (QueryConstraint | QueryCompositeFilterConstraint)[] = [],
   deps: any[] = [],
   transform?: (data: QueryDocumentSnapshot<DocumentData, DocumentData>) => T, // 👈 Agregamos esta función opcional
 ): UseCollectionQueryResult<T> => {
@@ -48,7 +50,7 @@ export const useCollectionQuery = <T,>(
       try {
         // 1. Creamos la referencia a la colección y armamos el query con los destructuring de los constraints
         const collectionRef = collection(db, collectionName);
-        const q = query(collectionRef, ...constraints);
+        const q = query(collectionRef, ...(constraints as QueryConstraint[]));
 
         // 2. Ejecutamos la consulta
         const querySnapshot = await getDocs(q);
