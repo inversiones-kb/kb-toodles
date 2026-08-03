@@ -6,6 +6,7 @@ import {
   IconPlus,
   IconTrash,
   IconUserDollar,
+  IconUserOff,
 } from "@tabler/icons-react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useMemo, useState } from "react";
@@ -21,20 +22,46 @@ import EmployeeTableToolbar, {
 import FloatingActionButton from "@/components/general/FloatingActionButton";
 
 import { USER_ROLE_MAP } from "@/types/user.types";
-import { Button, Chip, Link as HeroUILink } from "@heroui/react";
+import {
+  Button,
+  Chip,
+  Link as HeroUILink,
+  Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Textarea,
+  Tooltip,
+  useDisclosure,
+} from "@heroui/react";
 
 import { toast } from "sonner";
 import { BaseTableProps } from "@/components/ui/table/BaseTable";
 import { QueryConstraint, where } from "firebase/firestore";
 import { useCollectionQuery } from "@/hooks/useCollectionQuery";
 import { transformEmployee } from "@/utils/normalizers/normalizeEmployees";
-import { softDeleteEmployee } from "@/services/employee.service";
+import {
+  hardDeleteEmployee,
+  softDeleteEmployee,
+  terminateEmployee,
+} from "@/services/employee.service";
 import BranchLink from "@/components/general/BranchLink";
 import { useParams } from "next/navigation";
 import { BUSINESS_BRANCH_MAP } from "@/types/businessBranch.types";
 
 export default function EmployeesPage() {
   const branch = useParams().branch as keyof typeof BUSINESS_BRANCH_MAP;
+
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
+    null,
+  );
+  const [isTerminating, setIsTerminating] = useState<boolean>(false);
+  const [terminationReason, setTerminationReason] = useState<string>("");
+  const [terminationError, setTerminationError] = useState<string | null>(null);
+
+  const terminationDisclosure = useDisclosure();
 
   const [filters, setFilters] = useState<EmployeeFilters>({
     search: "",
@@ -58,7 +85,7 @@ export default function EmployeesPage() {
 
     if (filters.shift) constraints.push(where("shift", "==", filters.shift));
 
-    if (!filters.showFired) constraints.push(where("is_fired", "==", false));
+    /* if (!filters.showFired) constraints.push(where("is_fired", "==", false)); */
 
     return constraints;
   }, [filters]);
@@ -104,15 +131,39 @@ export default function EmployeesPage() {
         return `$${moneyFormatter.format(item.salary)}`;
 
       case "status":
-        return item.is_fired ? (
-          <Chip color="danger" variant="dot">
-            Despedido
-          </Chip>
-        ) : (
-          <Chip color="success" variant="dot">
-            Activo
-          </Chip>
+        return (
+          <Tooltip
+            content={
+              <div className="flex flex-col p-2">
+                <p className="text-soft-light text-sm">Motivo</p>
+                <p className="first-letter:uppercase">
+                  {item.termination_reason}
+                </p>
+
+                {item.terminated_at && (
+                  <p className="mt-2 text-xs text-right w-full text-soft-light">
+                    {dateToString(item.terminated_at, "DD/MM/YYYY")}
+                  </p>
+                )}
+              </div>
+            }
+            isDisabled={item.status !== "TERMINATED"}
+          >
+            <Chip
+              variant="dot"
+              color={
+                item.status === "ACTIVE"
+                  ? "success"
+                  : item.status === "SUSPENDED"
+                    ? "warning"
+                    : "danger"
+              }
+            >
+              {item.status_data.title}
+            </Chip>
+          </Tooltip>
         );
+
       case "cv":
         if (!item.cv_attachment)
           return <p className="text-sm text-soft-light">Sin asignar</p>;
@@ -160,6 +211,19 @@ export default function EmployeesPage() {
             <Button
               isIconOnly
               size="sm"
+              color="warning"
+              variant="flat"
+              onPress={(e) => {
+                setSelectedEmployee(item);
+                terminationDisclosure.onOpen();
+              }}
+            >
+              <IconUserOff />
+            </Button>
+
+            <Button
+              isIconOnly
+              size="sm"
               color="danger"
               variant="flat"
               onPress={(e) => handleDelete(item, e)}
@@ -173,9 +237,34 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    const res = await softDeleteEmployee(id);
-    /* const res = await createUser(data); */
+  const handleTermination = async () => {
+    if (!selectedEmployee) return;
+    if (!terminationReason) {
+      setTerminationError("Debes especificar la terminación del contrato");
+      return;
+    }
+    setTerminationError(null);
+    setTerminationReason("");
+
+    setIsTerminating(true);
+
+    const res = await terminateEmployee(selectedEmployee.id, terminationReason);
+
+    if (!res.success) {
+      return toast.error(res.message);
+    }
+
+    toast.success(res.message);
+
+    setIsTerminating(false);
+    refetch();
+    terminationDisclosure.onClose();
+  };
+
+  const handleDelete = async (id: string, hardDelete: boolean = false) => {
+    const res = await (hardDelete
+      ? hardDeleteEmployee(id)
+      : softDeleteEmployee(id));
 
     if (!res.success) {
       toast.error(res.message);
@@ -198,6 +287,60 @@ export default function EmployeesPage() {
       <section className="w-full h-full bg-layer-2 rounded-3xl p-3 flex flex-col gap-4 items-stretch">
         <CardTitle Icon={IconUserDollar} title="Empleados" />
         <div className="w-full overflow-x-auto h-full flex">
+          <Modal
+            isOpen={terminationDisclosure.isOpen}
+            onClose={terminationDisclosure.onClose}
+            backdrop={"blur"}
+            classNames={{
+              backdrop: "bg-danger/10",
+              base: "border-danger/20 border text-soft-light",
+
+              header: "bg-danger/30 text-light",
+
+              /* closeButton: "hover:bg-white/5 active:bg-white/10", */
+            }}
+          >
+            <ModalContent>
+              <ModalHeader className="flex flex-col gap-0">
+                Confirma la terminación del contrato
+                <p className="text-soft-light text-sm font-normal">
+                  Terminar contrato de {selectedEmployee?.name}{" "}
+                  {selectedEmployee?.last_name}
+                </p>
+              </ModalHeader>
+
+              <ModalBody className="pt-6">
+                <Textarea
+                  label="Motivo/Razón"
+                  variant="bordered"
+                  size="sm"
+                  radius="lg"
+                  isInvalid={Boolean(terminationError)}
+                  errorMessage={terminationError}
+                  value={terminationReason}
+                  onChange={(e) => setTerminationReason(e.target.value)}
+                />
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  variant="light"
+                  onPress={terminationDisclosure.onClose}
+                  isDisabled={isTerminating}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  color="danger"
+                  onPress={handleTermination}
+                  isLoading={isTerminating}
+                >
+                  Sí, terminar contrato de{" "}
+                  {selectedEmployee?.name.split(" ")[0]}
+                </Button>
+              </ModalFooter>
+            </ModalContent>
+          </Modal>
+
           <DynamicTable<Employee>
             columns={tableColumns}
             data={data}

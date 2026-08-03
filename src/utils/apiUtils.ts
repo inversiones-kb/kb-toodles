@@ -11,6 +11,7 @@ export const API_MESSAGES = {
     updated: "Empleado actualizado correctamente",
     deleted: "Empleado eliminado correctamente",
     error: "Error al crear el empleado",
+    terminated: "Contrato con el empleado terminado",
   },
 
   registerBalances: {

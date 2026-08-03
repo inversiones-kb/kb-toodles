@@ -3,7 +3,12 @@ import { customDateSchema, fileSchema } from "./firebase.validations";
 import { USER_ROLE_MAP, USER_ROLES } from "@/types/user.types";
 import { createFileSchema } from "./file.validations";
 import { FileMetadata } from "@/types/file.types";
-import { SHIFT_MAP, SHIFTS } from "@/types/employee.types";
+import {
+  EMPLOYEE_STATUS_MAP,
+  EMPLOYEE_STATUSES,
+  SHIFT_MAP,
+  SHIFTS,
+} from "@/types/employee.types";
 import {
   BUSINESS_BRANCH_MAP,
   BUSINESS_BRANCHES,
@@ -25,6 +30,10 @@ export const createEmployeeSchema = z.object({
   doc_number: z.coerce.number().min(1, "Número de documento inválido"),
   birthdate: customDateSchema,
   hired_at: customDateSchema,
+
+  status: z
+    .enum(EMPLOYEE_STATUSES, { message: "Estado inválido" })
+    .default("ACTIVE"),
 
   branch: z.enum(BUSINESS_BRANCHES, { message: "Sucursal inválida" }),
 });
@@ -57,15 +66,16 @@ export type Employee = Omit<
 > & {
   id: string;
 
+  terminated_at?: Date | null;
+  termination_reason?: string; // Opcional: "Renuncia", "Despido justificado", etc.
+
   role_data: (typeof USER_ROLE_MAP)["ADMIN"];
   shift_data: (typeof SHIFT_MAP)["AFTERNOON"];
   branch_data: (typeof BUSINESS_BRANCH_MAP)["la-fria"];
+  status_data: (typeof EMPLOYEE_STATUS_MAP)["ACTIVE"];
 
   is_deleted: boolean;
   deleted_at: Date;
-
-  is_fired: boolean;
-  fired_at: Date;
 
   cv_attachment: FileMetadata | null;
   rif_attachment: FileMetadata | null;

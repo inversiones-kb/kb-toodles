@@ -1,12 +1,14 @@
 import { db } from "@/firebaseConfig";
-import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { CustomApiResponse } from "@/types/coreTypes";
 import { API_MESSAGES } from "@/utils/apiUtils";
-import {
-  Employee,
-  EmployeeInput,
-  EmployeeOutput,
-} from "@/validations/employee.validations";
+import { EmployeeInput } from "@/validations/employee.validations";
 
 export const createEmployee = async (
   data: EmployeeInput,
@@ -19,7 +21,6 @@ export const createEmployee = async (
       ...data,
       created_at: new Date(),
       is_deleted: false,
-      is_fired: false,
     });
     return {
       success: true,
@@ -65,6 +66,37 @@ export const updateEmployee = async (
   }
 };
 
+export const terminateEmployee = async (
+  id: string,
+  reason: string,
+): Promise<CustomApiResponse> => {
+  try {
+    // 1. Obtenemos la referencia directa al documento en la colección
+    const shiftRef = doc(db, "employees", id);
+
+    // 2. Ejecutamos un updateDoc para cambiar su estado de visibilidad
+    await updateDoc(shiftRef, {
+      status: "TERMINATED", // Flag central para filtrar en las consultas del frontend
+
+      terminated_at: new Date(),
+      termination_reason: reason,
+    });
+
+    return {
+      success: true,
+      data: { id: id },
+      message: API_MESSAGES.employee.terminated,
+    };
+  } catch (error: any) {
+    console.error(`Error al eliminar para el ID ${id}:`, error);
+
+    return {
+      success: false,
+      message: API_MESSAGES.employee.error,
+    };
+  }
+};
+
 export const softDeleteEmployee = async (
   id: string,
 ): Promise<CustomApiResponse> => {
@@ -77,6 +109,31 @@ export const softDeleteEmployee = async (
       is_deleted: true, // Flag central para filtrar en las consultas del frontend
       deleted_at: new Date(), // Rastro de auditoría indispensable
     });
+
+    return {
+      success: true,
+      data: { id: id },
+      message: API_MESSAGES.employee.deleted,
+    };
+  } catch (error: any) {
+    console.error(`Error al eliminar para el ID ${id}:`, error);
+
+    return {
+      success: false,
+      message: API_MESSAGES.employee.error,
+    };
+  }
+};
+
+export const hardDeleteEmployee = async (
+  id: string,
+): Promise<CustomApiResponse> => {
+  try {
+    // 1. Obtenemos la referencia directa al documento en la colección
+    const ref = doc(db, "employees", id);
+
+    // 2. Ejecutamos un deleteDoc para eliminarlo de la base de datos
+    await deleteDoc(ref);
 
     return {
       success: true,

@@ -9,6 +9,18 @@ export interface EmployeePayment {
   receipt: CustomFile;
 }
 
+export const EMPLOYEE_STATUSES = ["ACTIVE", "SUSPENDED", "TERMINATED"] as const;
+export type EmployeeStatus = (typeof EMPLOYEE_STATUSES)[number];
+export const EMPLOYEE_STATUS_MAP: Record<EmployeeStatus, { title: string }> = {
+  ACTIVE: { title: "Activo" },
+  SUSPENDED: { title: "Suspendido" },
+  TERMINATED: { title: "Terminado" },
+};
+export const EMPLOYEE_STATUS_OPTIONS = EMPLOYEE_STATUSES.map((key) => ({
+  key, // Lo usaremos para el 'key' y 'value' del SelectItem
+  ...EMPLOYEE_STATUS_MAP[key], // Extraemos el title (y futuros iconos)
+}));
+
 export const SHIFTS = ["MORNING", "AFTERNOON", "FULL"] as const;
 export type Shift = (typeof SHIFTS)[number];
 export const SHIFT_MAP: Record<Shift, { title: string }> = {
@@ -45,7 +57,6 @@ export interface NewEmployee {
 
 export interface Employee extends NewEmployee {
   id: string;
-  fired_at?: DateValue | null; // Convenient field to store the fired date of an employee
   created_at: Date;
   free_day: WEEK_DAY;
   active: boolean; // This employee is currently working or not

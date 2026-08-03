@@ -1,5 +1,9 @@
 import { BUSINESS_BRANCH_MAP } from "@/types/businessBranch.types";
-import { SHIFT_MAP } from "@/types/employee.types";
+import {
+  EMPLOYEE_STATUS_MAP,
+  EmployeeStatus,
+  SHIFT_MAP,
+} from "@/types/employee.types";
 import { USER_ROLE_MAP } from "@/types/user.types";
 import { Employee } from "@/validations/employee.validations";
 import { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
@@ -23,10 +27,14 @@ export function transformEmployee(
     shift: data.shift,
     photo: data.photo,
     role: data.role,
+
+    status: data.status,
+    terminated_at: data.terminated_at ? data.terminated_at.toDate() : null,
+    termination_reason: data.termination_reason,
+    status_data: EMPLOYEE_STATUS_MAP[data.status as EmployeeStatus],
+
     salary: data.salary,
     branch: data.branch,
-    is_fired: data.is_fired,
-    fired_at: data.fired_at ? data.fired_at.toDate() : null,
     branch_data:
       BUSINESS_BRANCH_MAP[data.branch as keyof typeof BUSINESS_BRANCH_MAP],
     cv_attachment: data.cv_attachment,
