@@ -141,6 +141,7 @@ export default function CheckRegisterBalancePage() {
 
         if (newData.money.bs.mobile != totalMobilePayments) {
           newData.money.bs.mobile = totalMobilePayments;
+          newData.money.bs.mobile_system = totalMobilePayments;
         }
       }
 
@@ -157,6 +158,9 @@ export default function CheckRegisterBalancePage() {
     Number(watch("money.usd.rate2")) * Number(watch("money.usd.cash2"));
 
   const posBatches = watch("money.bs.pos_batches") || [];
+
+  const isCompoundLoading =
+    mobilePaymentsLoading || docIsLoading || expensesLoading;
 
   return (
     <main className="flex gap-5 h-full">
@@ -200,13 +204,15 @@ export default function CheckRegisterBalancePage() {
                 Completa el formulario
               </h2>
               <p className="text-sm text-soft-light">
-                {dateToString(data?.created_at, "DD/MM/YYYY")}
-                {" - "}
-                {data?.id}
+                {isCompoundLoading
+                  ? `...`
+                  : `${dateToString(data?.created_at, "DD/MM/YYYY")}
+                   - 
+                  ${data?.id}`}
               </p>
             </div>
 
-            {!docIsLoading ? (
+            {!isCompoundLoading ? (
               !data ? (
                 <div className="w-full flex justify-center py-20 items-center">
                   <EmptyState
@@ -318,7 +324,13 @@ export default function CheckRegisterBalancePage() {
                         ¿Es fiscal?
                       </Switch>
 
-                      <Input
+                      <FormattedNumberInput
+                        control={control}
+                        name={"z_report_number"}
+                        placeholder={"Número de reporte Z"}
+                      />
+
+                      {/* <Input
                         isDisabled={!isFiscal}
                         type="number"
                         aria-label="Reporte Z"
@@ -336,7 +348,7 @@ export default function CheckRegisterBalancePage() {
                         isInvalid={Boolean(errors.z_report_number?.message)}
                         errorMessage={errors.z_report_number?.message}
                         {...register("z_report_number")}
-                      />
+                      /> */}
                     </div>
                   </InputGroupSection>
 
@@ -651,7 +663,7 @@ export default function CheckRegisterBalancePage() {
               )
             ) : null}
 
-            {docIsLoading ? (
+            {isCompoundLoading ? (
               <div className="w-full flex justify-center">
                 <Spinner label="Cargando datos..." />
               </div>
