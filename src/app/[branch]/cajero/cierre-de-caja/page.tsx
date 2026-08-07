@@ -117,8 +117,10 @@ export default function CashierRegisterBalancePage() {
         usd: {
           rate1: 0,
           rate2: 0,
+          rate3: 0,
           cash1: 0,
           cash2: 0,
+          cash3: 0,
         },
       },
       status: "PENDING",
@@ -189,8 +191,10 @@ export default function CashierRegisterBalancePage() {
           usd: {
             rate1: 0,
             rate2: 0,
+            rate3: 0,
             cash1: 0,
             cash2: 0,
+            cash3: 0,
           },
         },
         status: "PENDING",
@@ -344,6 +348,20 @@ export default function CashierRegisterBalancePage() {
                           control={control}
                           name="money.usd.cash2"
                           placeholder="Efectivo 2"
+                        />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <FormattedNumberInput
+                          control={control}
+                          name="money.usd.rate3"
+                          placeholder="Tasa 3"
+                        />
+
+                        <FormattedNumberInput
+                          control={control}
+                          name="money.usd.cash3"
+                          placeholder="Efectivo 3"
                         />
                       </div>
                     </InputGroupSection>
