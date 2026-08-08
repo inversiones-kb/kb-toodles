@@ -157,6 +157,11 @@ export default function CheckRegisterBalancePage() {
   const usd2 =
     Number(watch("money.usd.rate2")) * Number(watch("money.usd.cash2"));
 
+  const usd3 =
+    Number(watch("money.usd.rate3")) * Number(watch("money.usd.cash3"));
+
+  console.log(watch("money"));
+
   const posBatches = watch("money.bs.pos_batches") || [];
 
   const isCompoundLoading =
@@ -407,6 +412,37 @@ export default function CheckRegisterBalancePage() {
                             <p className="font-medium text-stone-300">COP</p>
                           }
                           value={moneyFormatter.format(usd2)}
+                          isDisabled
+                          placeholder="Conversión"
+                          variant="faded"
+                          size="md"
+                          radius="lg"
+                        />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.usd.rate3"}
+                          placeholder={"Tasa 3"}
+                        />
+                        <FormattedNumberInput
+                          control={control}
+                          name={"money.usd.cash3"}
+                          placeholder={"Efectivo 3"}
+                        />
+
+                        <Input
+                          aria-label="Dólares 3"
+                          type="text"
+                          classNames={{
+                            base: "w-full",
+                            inputWrapper: "h-12",
+                          }}
+                          startContent={
+                            <p className="font-medium text-stone-300">COP</p>
+                          }
+                          value={moneyFormatter.format(usd3)}
                           isDisabled
                           placeholder="Conversión"
                           variant="faded"
