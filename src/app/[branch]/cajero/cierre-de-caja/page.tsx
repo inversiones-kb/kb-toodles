@@ -55,6 +55,8 @@ import { dateToString, formatOnlyTime } from "@/utils/dateUtils";
 import { NumericFormat } from "react-number-format";
 import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
 import { MobilePayment } from "@/validations/mobile_payment.validations";
+import { useCheckoutStore } from "@/store/useCheckoutStore";
+import { useDoc } from "@/hooks/useDoc";
 
 export default function CashierRegisterBalancePage() {
   const user = useAuthStore((store) => store.user);
@@ -65,18 +67,28 @@ export default function CashierRegisterBalancePage() {
     null,
   );
 
-  const {
+  const { currentShift } = useCheckoutStore();
+
+  const { data: shift, isLoading: shiftLoading } = useDoc<RegisterBalance>(
+    "register_balances",
+    currentShift?.shift_id,
+  );
+
+  /*  const {
     data: activeShifts,
     isLoading: shiftLoading,
     error,
     refetch,
   } = useCollectionQuery<RegisterBalance>(
     "register_balances",
-    [where("user_id", "==", user?.uid || ""), where("status", "==", "OPEN")],
+    [
+      where("id", "==", currentShift?.shift_id || ""),
+      where("status", "==", "OPEN"),
+    ],
     [user?.uid],
-  );
+  ); */
 
-  const shift = activeShifts[0];
+  /* const shift = activeShifts[0]; */
 
   const { data: expenses, isLoading: expensesLoading } =
     useCollectionQuery<Expense>(
@@ -147,7 +159,7 @@ export default function CashierRegisterBalancePage() {
   };
 
   const onSubmit = async () => {
-    if (!pendingData) return;
+    if (!pendingData || !shift) return;
 
     setIsLoading(true);
 
@@ -207,6 +219,8 @@ export default function CashierRegisterBalancePage() {
     Number(watch("money.usd.rate1")) * Number(watch("money.usd.cash1"));
   const usd2 =
     Number(watch("money.usd.rate2")) * Number(watch("money.usd.cash2"));
+  const usd3 =
+    Number(watch("money.usd.rate3")) * Number(watch("money.usd.cash3"));
 
   const totalExpenses = expenses.reduce((acc, item) => acc + item.amount, 0);
 
@@ -574,7 +588,7 @@ export default function CashierRegisterBalancePage() {
                         </p>
                         <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
                         <p className="font-light text-sm text-soft-light">
-                          ${moneyFormatter.format(Number(usd1 + usd2))}
+                          ${moneyFormatter.format(Number(usd1 + usd2 + usd3))}
                         </p>
                       </div>
 
@@ -595,7 +609,7 @@ export default function CashierRegisterBalancePage() {
                           $
                           {moneyFormatter.format(
                             Number(watch("money.cop.cash")) +
-                              (usd1 + usd2) +
+                              (usd1 + usd2 + usd3) +
                               totalExpenses,
                           )}
                         </p>

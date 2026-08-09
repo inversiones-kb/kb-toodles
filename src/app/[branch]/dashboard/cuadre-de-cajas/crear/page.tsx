@@ -119,6 +119,8 @@ export default function CreateRegisterBalancePage() {
     Number(watch("money.usd.rate1")) * Number(watch("money.usd.cash1"));
   const usd2 =
     Number(watch("money.usd.rate2")) * Number(watch("money.usd.cash2"));
+  const usd3 =
+    Number(watch("money.usd.rate3")) * Number(watch("money.usd.cash3"));
 
   return (
     <main className="flex gap-5 h-full">
@@ -389,12 +391,7 @@ export default function CreateRegisterBalancePage() {
                     inputWrapper: "h-12",
                   }}
                   startContent={<p className="font-medium text-stone-300">$</p>}
-                  value={moneyFormatter.format(
-                    Number(watch("money.usd.cash1")) *
-                      Number(watch("money.usd.rate1")) +
-                      Number(watch("money.usd.cash2")) *
-                        Number(watch("money.usd.rate2")),
-                  )}
+                  value={moneyFormatter.format(usd1 + usd2 + usd3)}
                   placeholder="Dólares totales"
                   variant="bordered"
                   size="md"
@@ -615,7 +612,7 @@ export default function CreateRegisterBalancePage() {
                   </p>
                   <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
                   <p className="font-light text-sm text-soft-light">
-                    ${moneyFormatter.format(Number(usd1 + usd2))}
+                    ${moneyFormatter.format(Number(usd1 + usd2 + usd3))}
                   </p>
                 </div>
 
@@ -636,7 +633,7 @@ export default function CreateRegisterBalancePage() {
                     $
                     {moneyFormatter.format(
                       Number(watch("money.cop.cash")) +
-                        (usd1 + usd2) +
+                        (usd1 + usd2 + usd3) +
                         totalExpenses,
                     )}
                   </p>

@@ -21,9 +21,10 @@ export const generateSalesChartData = (balances: RegisterBalance[]) => {
 
       const usd1 = balance.money.usd.cash1 * balance.money.usd.rate1;
       const usd2 = balance.money.usd.cash2 * balance.money.usd.rate2;
+      const usd3 = balance.money.usd.cash3 * balance.money.usd.rate3;
 
       const total =
-        balance.money.cop.cash + balance.total_expenses + usd1 + usd2;
+        balance.money.cop.cash + balance.total_expenses + usd1 + usd2 + usd3;
 
       acc[dayLabel] += total;
 
@@ -116,9 +117,10 @@ export const generateDiffSalesChartData = (balances: RegisterBalance[]) => {
 
       const usd1 = balance.money.usd.cash1 * balance.money.usd.rate1;
       const usd2 = balance.money.usd.cash2 * balance.money.usd.rate2;
+      const usd3 = balance.money.usd.cash3 * balance.money.usd.rate3;
 
       const total =
-        balance.money.cop.cash + balance.total_expenses + usd1 + usd2;
+        balance.money.cop.cash + balance.total_expenses + usd1 + usd2 + usd3;
 
       const diff = total - balance.money.cop.system;
       const isBalanced = Math.abs(diff) <= 100; // 100 cop grace interval

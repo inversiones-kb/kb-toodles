@@ -1,5 +1,11 @@
 import { db } from "@/firebaseConfig";
-import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { CustomApiResponse } from "@/types/coreTypes";
 import { API_MESSAGES } from "@/utils/apiUtils";
 import {
@@ -110,6 +116,34 @@ export const softDeleteRegisterBalance = async (
       is_deleted: true, // Flag central para filtrar en las consultas del frontend
       deleted_at: new Date(), // Rastro de auditoría indispensable
     });
+
+    return {
+      success: true,
+      data: { id: shiftId },
+      message: API_MESSAGES.registerBalances.deleted,
+    };
+  } catch (error: any) {
+    console.error(
+      `Error en softDeleteRegisterBalance para el ID ${shiftId}:`,
+      error,
+    );
+
+    return {
+      success: false,
+      message: API_MESSAGES.registerBalances.error,
+    };
+  }
+};
+
+export const hardDeleteRegisterBalance = async (
+  shiftId: string,
+): Promise<CustomApiResponse> => {
+  try {
+    // 1. Obtenemos la referencia directa al documento en la colección
+    const ref = doc(db, "register_balances", shiftId);
+
+    // 2. Ejecutamos un deleteDoc para eliminarlo de la base de datos
+    await deleteDoc(ref);
 
     return {
       success: true,

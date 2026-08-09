@@ -24,13 +24,22 @@ import BranchLink from "@/components/general/BranchLink";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
 import { BusinessBranch } from "@/types/businessBranch.types";
 import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
+import { useCheckoutStore } from "@/store/useCheckoutStore";
+import { useDoc } from "@/hooks/useDoc";
 
 export default function CashierNewExpensePage() {
   const branch = useParams().branch as BusinessBranch;
 
   const user = useAuthStore((store) => store.user);
 
-  const {
+  const { currentShift } = useCheckoutStore();
+
+  const { data: shift, isLoading: shiftLoading } = useDoc<RegisterBalance>(
+    "register_balances",
+    currentShift?.shift_id,
+  );
+
+  /* const {
     data: activeShifts,
     isLoading: shiftLoading,
     error,
@@ -41,7 +50,7 @@ export default function CashierNewExpensePage() {
     [user?.uid], // 🔥 CRUCIAL: Solo se vuelve a ejecutar si el usuario cambia
   );
 
-  const shift = activeShifts[0];
+  const shift = activeShifts[0]; */
 
   const {
     register,

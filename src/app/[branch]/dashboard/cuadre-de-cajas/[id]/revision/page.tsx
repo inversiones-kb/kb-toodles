@@ -156,7 +156,6 @@ export default function CheckRegisterBalancePage() {
     Number(watch("money.usd.rate1")) * Number(watch("money.usd.cash1"));
   const usd2 =
     Number(watch("money.usd.rate2")) * Number(watch("money.usd.cash2"));
-
   const usd3 =
     Number(watch("money.usd.rate3")) * Number(watch("money.usd.cash3"));
 
@@ -462,12 +461,7 @@ export default function CheckRegisterBalancePage() {
                         startContent={
                           <p className="font-medium text-stone-300">COP</p>
                         }
-                        value={moneyFormatter.format(
-                          Number(watch("money.usd.cash1")) *
-                            Number(watch("money.usd.rate1")) +
-                            Number(watch("money.usd.cash2")) *
-                              Number(watch("money.usd.rate2")),
-                        )}
+                        value={moneyFormatter.format(usd1 + usd2 + usd3)}
                         placeholder="Dólares totales"
                         variant="bordered"
                         size="md"
@@ -654,7 +648,7 @@ export default function CheckRegisterBalancePage() {
                           </p>
                           <span className="flex-1 h-px border-b border-soft-light/40 rounded-full border-dashed" />
                           <p className="font-light text-sm text-soft-light">
-                            ${moneyFormatter.format(Number(usd1 + usd2))}
+                            ${moneyFormatter.format(Number(usd1 + usd2 + usd3))}
                           </p>
                         </div>
 
@@ -676,7 +670,7 @@ export default function CheckRegisterBalancePage() {
                             $
                             {moneyFormatter.format(
                               Number(watch("money.cop.cash")) +
-                                (usd1 + usd2) +
+                                (usd1 + usd2 + usd3) +
                                 Number(data.total_expenses),
                             )}
                           </p>

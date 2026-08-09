@@ -32,7 +32,10 @@ import RegisterBalanceToolbar, {
 } from "@/components/registerBalances/RegisterBalanceTableToolbar";
 import { deleteDoc, orderBy, QueryConstraint, where } from "firebase/firestore";
 import { toast } from "sonner";
-import { softDeleteRegisterBalance } from "@/services/register-balance.service";
+import {
+  hardDeleteRegisterBalance,
+  softDeleteRegisterBalance,
+} from "@/services/register-balance.service";
 import { useCollectionQuery } from "@/hooks/useCollectionQuery";
 import BranchLink from "@/components/general/BranchLink";
 import { useParams } from "next/navigation";
@@ -97,6 +100,7 @@ export default function RegisterBalancesPage() {
   ) => {
     const usd1 = item.money ? item.money.usd.cash1 * item.money.usd.rate1 : 0;
     const usd2 = item.money ? item.money.usd.cash2 * item.money.usd.rate2 : 0;
+    const usd3 = item.money ? item.money.usd.cash3 * item.money.usd.rate3 : 0;
 
     switch (columnKey) {
       case "checkout_number":
@@ -106,7 +110,7 @@ export default function RegisterBalancesPage() {
       case "sales":
         if (!item.money) return "--";
 
-        return `$${moneyFormatter.format(item.money.cop.cash + (usd1 + usd2) + item.total_expenses)}`;
+        return `$${moneyFormatter.format(item.money.cop.cash + (usd1 + usd2 + usd3) + item.total_expenses)}`;
 
       case "total_expenses":
         return `$${moneyFormatter.format(item.total_expenses)}`;
@@ -148,7 +152,7 @@ export default function RegisterBalancesPage() {
         if (!item.money) return "--";
 
         const totalCop =
-          item.money.cop.cash + usd1 + usd2 + item.total_expenses;
+          item.money.cop.cash + usd1 + usd2 + usd3 + item.total_expenses;
         const diff = totalCop - item.money.cop.system;
         const isBalanced = Math.abs(diff) <= 100; // 100 cop grace interval
 
@@ -216,8 +220,11 @@ export default function RegisterBalancesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    const res = await softDeleteRegisterBalance(id);
+  const handleDelete = async (id: string, hardDelete: boolean = false) => {
+    const res = await (hardDelete
+      ? hardDeleteRegisterBalance(id)
+      : softDeleteRegisterBalance(id));
+
     /* const res = await createUser(data); */
 
     if (!res.success) {

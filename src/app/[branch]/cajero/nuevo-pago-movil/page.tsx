@@ -29,13 +29,22 @@ import {
   MobilePaymentInput,
 } from "@/validations/mobile_payment.validations";
 import { createMobilePayment } from "@/services/mobile-payment.service";
+import { useCheckoutStore } from "@/store/useCheckoutStore";
+import { useDoc } from "@/hooks/useDoc";
 
 export default function CashierNewMobilePayment() {
   const branch = useParams().branch as BusinessBranch;
 
   const user = useAuthStore((store) => store.user);
 
-  const {
+  const { currentShift } = useCheckoutStore();
+
+  const { data: shift, isLoading: shiftLoading } = useDoc<RegisterBalance>(
+    "register_balances",
+    currentShift?.shift_id,
+  );
+
+  /*  const {
     data: activeShifts,
     isLoading: shiftLoading,
 
@@ -47,7 +56,7 @@ export default function CashierNewMobilePayment() {
     [user?.uid], // 🔥 CRUCIAL: Solo se vuelve a ejecutar si el usuario cambia
   );
 
-  const shift = activeShifts[0];
+  const shift = activeShifts[0]; */
 
   const {
     register,
