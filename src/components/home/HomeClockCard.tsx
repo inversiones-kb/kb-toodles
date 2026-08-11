@@ -40,7 +40,7 @@ const HomeClockCard = () => {
   }, []);
 
   return (
-    <>
+    <section className="row-span-2 bg-layer-2 rounded-3xl flex items-center gap-1 relative overflow-hidden">
       <div
         className={clsx([
           "w-full h-full bg-layer-2 absolute z-10 left-0 top-0 rounded-3xl grid place-content-center transition-opacity",
@@ -49,18 +49,19 @@ const HomeClockCard = () => {
       >
         <Spinner />
       </div>
-      <div className="flex flex-col items-right text-right flex-1">
+
+      <div className="flex flex-col text-right flex-1">
         <h6 className="text-brand-primary text-6xl font-bold">
           {date.date.toString().padStart(2, "00")}
         </h6>
-        <h6 className="font-bold text-6xl">{date.month.substring(0, 3)}</h6>
+        <h6 className="font-bold text-5xl">{date.month.substring(0, 3)}</h6>
       </div>
       <Image
         src={LightningIcon}
-        className="absolute inset-0 m-auto h-full"
+        className="inset-0 m-auto h-full pointer-events-none"
         alt="Ícono de un rayo"
       />
-      <div className="flex flex-col items-left text-left flex-1">
+      <div className="flex flex-col text-left flex-1 gap-1">
         <h6 className="font-bold text-6xl">
           {(time.hours > 12 ? time.hours - 12 : time.hours)
             .toString()
@@ -70,7 +71,7 @@ const HomeClockCard = () => {
           {time.minutes.toString().padStart(2, "00")}
         </h6>
       </div>
-    </>
+    </section>
   );
 };
 

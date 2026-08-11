@@ -25,6 +25,8 @@ import {
   PopoverTrigger,
   Select,
   SelectItem,
+  Tab,
+  Tabs,
   Tooltip,
   useDisclosure,
 } from "@heroui/react";
@@ -275,7 +277,7 @@ const Content = () => {
 
       {/* BOTTOM CONTENT */}
       <div className="flex flex-col gap-4 items-start w-full">
-        <Select
+        {/*  <Select
           defaultSelectedKeys={[branch || BUSINESS_BRANCHES[0]]}
           label="Sucursal"
           variant="bordered"
@@ -290,7 +292,7 @@ const Content = () => {
           }
         >
           {(item) => <SelectItem key={item.key}>{item.title}</SelectItem>}
-        </Select>
+        </Select> */}
 
         <div className="flex justify-start px-0 items-center gap-2 w-full rounded-2xl max-w-full min-w-0">
           <Avatar
@@ -314,6 +316,25 @@ const Content = () => {
             {user?.name} {user?.last_name}
           </p>
         </div>
+
+        <Tabs
+          selectedKey={branch}
+          onSelectionChange={
+            (key) => onBranchChange(key as BusinessBranch)
+            /* setSelectedCurrency(key.toString() as typeof selectedCurrency) */
+          }
+          classNames={{
+            base: "w-full",
+            tabList: "w-full",
+          }}
+          items={BUSINESS_BRANCH_OPTIONS}
+          variant="solid"
+          color="default"
+        >
+          {(item) => (
+            <Tab key={item.key} title={item.title} className="flex-1" />
+          )}
+        </Tabs>
 
         <Button
           variant="flat"

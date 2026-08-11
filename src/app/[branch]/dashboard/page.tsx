@@ -8,15 +8,11 @@ import {
   IconNote,
   IconUserDollar,
 } from "@tabler/icons-react";
-import HomeNoteCard from "@/components/home/HomeNoteCard";
 import HomeClockCard from "@/components/home/HomeClockCard";
 import { useCollectionQuery } from "@/hooks/useCollectionQuery";
 import { Note } from "@/validations/note.validations";
 import { useAuthStore } from "../../context/AuthProvider";
-import { Button, Spinner } from "@heroui/react";
-import EmptyState from "@/components/general/EmptyState";
 import HomeNextSeasonCard from "@/components/home/HomeNextSeasonCard";
-import BranchLink from "@/components/general/BranchLink";
 import SalesChart from "@/components/home/SalesChart";
 import { RegisterBalance } from "@/validations/registerBalance.validations";
 import { useParams } from "next/navigation";
@@ -25,6 +21,7 @@ import { orderBy, where } from "firebase/firestore";
 import CurrencySalesChart from "@/components/home/CurrencySalesChart";
 import DiffSalesChart from "@/components/home/DiffSalesChart";
 import ExpensesChart from "@/components/home/ExpensesChart";
+import { today, getLocalTimeZone } from "@internationalized/date";
 
 export default function DashboardPage() {
   const user = useAuthStore((store) => store.user);
@@ -36,15 +33,23 @@ export default function DashboardPage() {
     [user?.uid],
   );
 
+  //? Temporal minimum date to avoid data overflow in charts (updatable in the future for a DateRangePicker)
+  const minimumDate = today(getLocalTimeZone())
+    .subtract({ days: 7 })
+    .toDate(getLocalTimeZone());
+
   const { data, isLoading } = useCollectionQuery<RegisterBalance>(
     "register_balances",
     [
       where("branch", "==", branch),
       where("status", "in", ["CHECKED", "PENDING"]),
+      where("created_at", ">=", minimumDate),
       orderBy("created_at", "asc"),
     ],
     [user?.id],
   );
+
+  console.log(data);
 
   return (
     <main className="grid grid-cols-3 grid-rows-7 gap-5 h-full max-sm:flex max-sm:flex-col max-sm:overflow-y-auto">
@@ -88,9 +93,7 @@ export default function DashboardPage() {
       </section>
 
       {/* CLOCK SECTION */}
-      <section className="row-span-2 bg-layer-2 rounded-3xl flex items-center justify-between gap-20 p-3 relative">
-        <HomeClockCard />
-      </section>
+      <HomeClockCard />
 
       {/* NOTEPAD SECTION */}
       <section className="row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
