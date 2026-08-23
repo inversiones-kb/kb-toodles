@@ -51,7 +51,7 @@ export default function DaylyRegisterBalancesPage() {
     const constraints: (QueryConstraint | QueryCompositeFilterConstraint)[] =
       [];
 
-   /*  if (filters.status) {
+    /*  if (filters.status) {
       ors.push(where("status", "==", filters.status));
     } */
 
@@ -132,7 +132,13 @@ export default function DaylyRegisterBalancesPage() {
           {!isLoading && data ? (
             <div className="grid grid-cols-2 gap-4">
               {data.map((item) => {
-                return <RegisterBalanceCard key={item.id} data={item} />;
+                return (
+                  <RegisterBalanceCard
+                    key={item.id}
+                    data={item}
+                    refetch={refetch}
+                  />
+                );
               })}
             </div>
           ) : null}

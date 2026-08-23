@@ -19,7 +19,7 @@ export const createRegisterBalanceSchema = z.object({
   total_mobile_payments: z.number(),
   money: z.object({
     cop: z.object({
-      cash: z.coerce.number().min(0, "El valor mínimo es 0"),
+      cash: z.coerce.number(),
       system: z.coerce.number().min(0, "El valor mínimo es 0"),
     }),
     usd: z.object({

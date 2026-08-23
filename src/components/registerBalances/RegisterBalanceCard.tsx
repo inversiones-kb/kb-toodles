@@ -9,7 +9,7 @@ import {
   RegisterBalance,
   RegisterBalanceInput,
 } from "@/validations/registerBalance.validations";
-import { Button, Chip, Input, Spinner } from "@heroui/react";
+import { Button, Chip, Form, Input, Spinner } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { where } from "firebase/firestore";
 import { useEffect, useState } from "react";
@@ -23,9 +23,10 @@ import { REGISTER_BALANCE_STATUS_MAP } from "@/types/registerBalance.types";
 
 interface Props {
   data: RegisterBalance;
+  refetch?: () => void;
 }
 
-const RegisterBalanceCard = ({ data }: Props) => {
+const RegisterBalanceCard = ({ data, refetch }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { data: expenses, isLoading: expensesLoading } =
@@ -84,6 +85,8 @@ const RegisterBalanceCard = ({ data }: Props) => {
     }
 
     toast.success(res.message);
+
+    if (refetch) refetch();
   };
 
   const totalMobilePayments = mobilePayments.reduce(
@@ -99,10 +102,8 @@ const RegisterBalanceCard = ({ data }: Props) => {
         newData.money.bs.pos_system =
           newData.money.bs.pos_system || newData.money.bs.pos;
 
-        if (newData.money.bs.mobile != totalMobilePayments) {
-          newData.money.bs.mobile = totalMobilePayments;
-          newData.money.bs.mobile_system = totalMobilePayments;
-        }
+        newData.money.bs.mobile = totalMobilePayments;
+        newData.money.bs.mobile_system = totalMobilePayments;
       }
 
       reset(newData);
@@ -158,7 +159,7 @@ const RegisterBalanceCard = ({ data }: Props) => {
         ) : null}
       </header>
 
-      <div className="flex flex-col gap-2">
+      <Form onSubmit={handleSubmit(onSubmit)} className="max-w-xl w-full h-fit">
         <div className="bg-layer-3 w-full gap-2 rounded-xl p-3 flex flex-col">
           <InputGroupSection title="Dólares">
             <div className="flex gap-2">
@@ -475,7 +476,7 @@ const RegisterBalanceCard = ({ data }: Props) => {
             Confirmar cierre de caja
           </Button>
         ) : null}
-      </div>
+      </Form>
     </div>
   );
 };
