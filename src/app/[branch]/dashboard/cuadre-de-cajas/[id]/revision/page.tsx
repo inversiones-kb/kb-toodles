@@ -159,8 +159,6 @@ export default function CheckRegisterBalancePage() {
   const usd3 =
     Number(watch("money.usd.rate3")) * Number(watch("money.usd.cash3"));
 
-  console.log(watch("money"));
-
   const posBatches = watch("money.bs.pos_batches") || [];
 
   const isCompoundLoading =

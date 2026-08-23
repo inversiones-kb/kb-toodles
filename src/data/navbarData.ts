@@ -10,6 +10,7 @@ import {
   IconUsersGroup,
   IconCircleDashedCheck,
   IconKey,
+  IconHours24,
 } from "@tabler/icons-react";
 
 interface NavbarItem extends NavbarSection {
@@ -33,6 +34,11 @@ export const NAVBAR_DATA: NavbarSection[] = [
         name: "Ver",
         href: "/dashboard/cuadre-de-cajas",
         Icon: IconEye,
+      },
+      {
+        name: "Diario",
+        href: "/dashboard/cuadre-de-cajas/diario",
+        Icon: IconHours24,
       },
       /* {
         name: "Crear",
