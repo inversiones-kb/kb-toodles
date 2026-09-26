@@ -37,7 +37,7 @@ export default function DashboardPage() {
   );
 
   const [dateRange, setDateRange] = useState<RangeValue<DateValue>>({
-    start: today(getLocalTimeZone()).subtract({ days: 7 }),
+    start: today(getLocalTimeZone()).subtract({ days: 30 }),
     end: today(getLocalTimeZone()),
   });
 
