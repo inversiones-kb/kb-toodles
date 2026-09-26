@@ -8,6 +8,10 @@ import { adminDb } from "@/config/firebase-admin";
 // counts stay manually entered by the cashier.
 interface IngestPayload {
   doc_id: string;
+  // Opt-in only: lets a deliberate re-run overwrite an already-CHECKED doc
+  // (e.g. one processed before a windowing fix). Normal runs never send
+  // this, so a PENDING-only doc stays the default, safe target.
+  allow_checked?: boolean;
   money: {
     cop: { system: number };
     bs: { pos_system: number; mobile_system: number };
@@ -20,6 +24,7 @@ function isValidPayload(body: unknown): body is IngestPayload {
   return (
     typeof p.doc_id === "string" &&
     p.doc_id.length > 0 &&
+    (p.allow_checked === undefined || typeof p.allow_checked === "boolean") &&
     typeof p.money?.cop?.system === "number" &&
     typeof p.money?.bs?.pos_system === "number" &&
     typeof p.money?.bs?.mobile_system === "number"
@@ -49,7 +54,7 @@ export async function POST(req: NextRequest) {
   if (!isValidPayload(body)) {
     return NextResponse.json({ success: false, message: "Missing or invalid fields" }, { status: 400 });
   }
-  const { doc_id, money } = body;
+  const { doc_id, money, allow_checked } = body;
 
   try {
     const docRef = adminDb.collection("register_balances").doc(doc_id);
@@ -61,11 +66,13 @@ export async function POST(req: NextRequest) {
         { status: 404 },
       );
     }
-    if (doc.data()?.status !== "PENDING") {
+    const status = doc.data()?.status;
+    const isEligible = status === "PENDING" || (allow_checked && status === "CHECKED");
+    if (!isEligible) {
       return NextResponse.json(
         {
           success: false,
-          message: `register_balances/${doc_id} is not PENDING (status=${doc.data()?.status}) - already reconciled or not ready`,
+          message: `register_balances/${doc_id} is not eligible (status=${status}) - already reconciled or not ready`,
         },
         { status: 409 },
       );

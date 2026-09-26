@@ -215,7 +215,7 @@ type Shift struct {
 // branch/checkout/date, so each can be reported on with its own time
 // window instead of guessing at a single whole-day match (a checkout can
 // have more than one shift/cashier in a day).
-func listShifts(cfg Config, caja, date string) ([]Shift, error) {
+func listShifts(cfg Config, caja, date string, includeChecked bool) ([]Shift, error) {
 	if cfg.IngestURL == "" || cfg.IngestKey == "" {
 		return nil, fmt.Errorf("config is missing \"ingest_url\" or \"ingest_key\"")
 	}
@@ -232,6 +232,9 @@ func listShifts(cfg Config, caja, date string) ([]Shift, error) {
 	q.Set("branch", cfg.Branch)
 	q.Set("checkout_number", caja)
 	q.Set("date", date)
+	if includeChecked {
+		q.Set("include_checked", "true")
+	}
 	u.RawQuery = q.Encode()
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
@@ -270,8 +273,9 @@ func listShifts(cfg Config, caja, date string) ([]Shift, error) {
 
 // ingestPayload matches IngestPayload in src/app/api/ingest/route.ts.
 type ingestPayload struct {
-	DocID string `json:"doc_id"`
-	Money struct {
+	DocID        string `json:"doc_id"`
+	AllowChecked bool   `json:"allow_checked,omitempty"`
+	Money        struct {
 		Cop struct {
 			System float64 `json:"system"`
 		} `json:"cop"`
@@ -282,9 +286,10 @@ type ingestPayload struct {
 	} `json:"money"`
 }
 
-func newIngestPayload(docID string, s Summary) ingestPayload {
+func newIngestPayload(docID string, includeChecked bool, s Summary) ingestPayload {
 	var p ingestPayload
 	p.DocID = docID
+	p.AllowChecked = includeChecked
 	p.Money.Cop.System = s.CopSystem
 	p.Money.Bs.PosSystem = s.POSSystem
 	p.Money.Bs.MobileSystem = s.MobileSystem
@@ -319,7 +324,7 @@ func postSummary(cfg Config, payload ingestPayload) error {
 	return nil
 }
 
-func run(cfg Config, queriesPath, date, caja string, doIngest bool, out *os.File) error {
+func run(cfg Config, queriesPath, date, caja string, doIngest, includeChecked bool, out *os.File) error {
 	db, err := sql.Open("mysql", cfg.DSN)
 	if err != nil {
 		return fmt.Errorf("opening database: %w", err)
@@ -334,12 +339,12 @@ func run(cfg Config, queriesPath, date, caja string, doIngest bool, out *os.File
 		return fmt.Errorf("loading queries: %w", err)
 	}
 
-	shifts, err := listShifts(cfg, caja, date)
+	shifts, err := listShifts(cfg, caja, date, includeChecked)
 	if err != nil {
 		return fmt.Errorf("listing shifts: %w", err)
 	}
 	if len(shifts) == 0 {
-		fmt.Fprintf(out, "no PENDING shifts found for caja=%s date=%s\n", caja, date)
+		fmt.Fprintf(out, "no eligible shifts found for caja=%s date=%s\n", caja, date)
 		return nil
 	}
 
@@ -380,7 +385,7 @@ func run(cfg Config, queriesPath, date, caja string, doIngest bool, out *os.File
 		}
 
 		if doIngest {
-			if err := postSummary(cfg, newIngestPayload(shift.ID, summary)); err != nil {
+			if err := postSummary(cfg, newIngestPayload(shift.ID, includeChecked, summary)); err != nil {
 				return fmt.Errorf("ingest for shift %s: %w", shift.ID, err)
 			}
 			shiftReport["ingested"] = true
@@ -404,6 +409,7 @@ func main() {
 	date := flag.String("date", time.Now().Format("2006-01-02"), "report date (YYYY-MM-DD)")
 	caja := flag.String("caja", "", "IDCAJA / checkout code (required)")
 	ingest := flag.Bool("ingest", true, "POST each shift's summary to the app's /api/ingest endpoint")
+	includeChecked := flag.Bool("include-checked", false, "also reprocess already-CHECKED shifts (e.g. to correct a fixed bug) instead of only PENDING ones")
 	flag.Parse()
 
 	if *caja == "" {
@@ -415,7 +421,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := run(cfg, *queriesPath, *date, *caja, *ingest, os.Stdout); err != nil {
+	if err := run(cfg, *queriesPath, *date, *caja, *ingest, *includeChecked, os.Stdout); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -56,9 +56,12 @@ func TestApplyRow(t *testing.T) {
 func TestNewIngestPayload(t *testing.T) {
 	s := Summary{POSSystem: 183690.29, MobileSystem: 3092.87, CopSystem: 417730.00}
 
-	p := newIngestPayload("Et7dIRHDE0ZBKJPRa1GP", s)
+	p := newIngestPayload("Et7dIRHDE0ZBKJPRa1GP", true, s)
 	if p.DocID != "Et7dIRHDE0ZBKJPRa1GP" {
 		t.Errorf("DocID = %q, want the given shift id", p.DocID)
+	}
+	if !p.AllowChecked {
+		t.Error("AllowChecked = false, want true (was passed includeChecked=true)")
 	}
 	if p.Money.Bs.PosSystem != s.POSSystem || p.Money.Bs.MobileSystem != s.MobileSystem || p.Money.Cop.System != s.CopSystem {
 		t.Errorf("payload money = %+v, want it to match summary %+v", p.Money, s)
