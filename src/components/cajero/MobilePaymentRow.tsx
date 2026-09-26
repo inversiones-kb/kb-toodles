@@ -22,17 +22,28 @@ import {
 import { dateToString, formatOnlyTime } from "@/utils/dateUtils";
 import { moneyFormatter } from "@/utils/formatters";
 import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
+import { CustomApiResponse } from "@/types/coreTypes";
 
 interface MobilePaymentRowProps {
   payment: MobilePayment;
   editable: boolean;
   onChanged: () => void;
+  // Por defecto usa las funciones del cajero (solo permitidas en turno OPEN).
+  // Las vistas de admin (cuadre-de-cajas/diario, revision) inyectan las
+  // variantes admin* que funcionan sin importar el estado del turno.
+  onUpdate?: (
+    id: string,
+    data: { amount: number; ref: string },
+  ) => Promise<CustomApiResponse>;
+  onDelete?: (id: string) => Promise<CustomApiResponse>;
 }
 
 export default function MobilePaymentRow({
   payment,
   editable,
   onChanged,
+  onUpdate = updateMobilePayment,
+  onDelete = softDeleteMobilePayment,
 }: MobilePaymentRowProps) {
   const editDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -60,7 +71,7 @@ export default function MobilePaymentRow({
     }
 
     setIsSaving(true);
-    const res = await updateMobilePayment(payment.id, {
+    const res = await onUpdate(payment.id, {
       amount: Number(data.amount),
       ref: data.ref,
     });
@@ -75,7 +86,7 @@ export default function MobilePaymentRow({
 
   const onConfirmDelete = async () => {
     setIsDeleting(true);
-    const res = await softDeleteMobilePayment(payment.id);
+    const res = await onDelete(payment.id);
     setIsDeleting(false);
 
     if (!res.success) return toast.error(res.message);

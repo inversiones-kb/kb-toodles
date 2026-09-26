@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { normalizeFirestoreData } from "@/utils/firestore.utils";
@@ -7,6 +7,7 @@ interface UseDocResult<T> {
   data: T | null;
   isLoading: boolean;
   error: string | null;
+  refetch: () => void;
 }
 
 export const useDoc = <T>(
@@ -16,6 +17,11 @@ export const useDoc = <T>(
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
+
+  const refetch = useCallback(() => {
+    setTick((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
     // Evitamos ejecuciones innecesarias si el ID aún no está disponible en la URL
@@ -51,7 +57,7 @@ export const useDoc = <T>(
     };
 
     fetchDocument();
-  }, [collectionName, docId]);
+  }, [collectionName, docId, tick]);
 
-  return { data, isLoading, error };
+  return { data, isLoading, error, refetch };
 };

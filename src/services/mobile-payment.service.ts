@@ -58,14 +58,22 @@ export const createMobilePayment = async (
 };
 
 /**
- * Edita el monto/referencia de un pago móvil ya registrado, ajustando el
- * acumulador `total_mobile_payments` del turno por la diferencia (delta) en
- * la misma transacción. Bloqueado si el turno ya no está OPEN.
+ * Edita el monto/referencia de un pago móvil ya registrado, ajustando
+ * `total_mobile_payments` por la diferencia (delta) en la misma transacción.
+ * También ajusta `money.bs.mobile` por el mismo delta: ese campo es la copia
+ * del total de pagos móvil que el cajero congela al cerrar el turno, así que
+ * una vez cerrado ya no se recalcula solo — sin este ajuste quedaría
+ * desincronizado del detalle real tras una edición post-cierre. Mientras el
+ * turno sigue OPEN, `money.bs.mobile` todavía no existe en el documento y el
+ * cierre lo sobreescribe por completo con el total en vivo, así que este
+ * ajuste no tiene efecto (inofensivo) en ese caso.
+ * `allowClosed` decide si se permite sobre un turno que ya no está OPEN.
  */
-export const updateMobilePayment = async (
+async function performUpdateMobilePayment(
   id: string,
   data: { amount: number; ref: string },
-): Promise<CustomApiResponse> => {
+  allowClosed: boolean,
+): Promise<CustomApiResponse> {
   try {
     await runTransaction(db, async (tx) => {
       const paymentRef = doc(db, "mobile_payments", id);
@@ -78,7 +86,9 @@ export const updateMobilePayment = async (
       const shiftRef = doc(db, "register_balances", payment.shift_id);
       const shiftSnap = await tx.get(shiftRef);
       if (!shiftSnap.exists()) throw new Error("SHIFT_NOT_FOUND");
-      if (shiftSnap.data().status !== "OPEN") throw new Error("SHIFT_CLOSED");
+      if (!allowClosed && shiftSnap.data().status !== "OPEN") {
+        throw new Error("SHIFT_CLOSED");
+      }
 
       const delta = data.amount - payment.amount;
 
@@ -90,6 +100,7 @@ export const updateMobilePayment = async (
 
       tx.update(shiftRef, {
         total_mobile_payments: increment(delta),
+        "money.bs.mobile": increment(delta),
         updated_at: new Date(),
       });
     });
@@ -114,16 +125,29 @@ export const updateMobilePayment = async (
       message: API_MESSAGES.mobilePayments.error,
     };
   }
-};
+}
+
+/** Uso del cajero: solo permitido mientras el turno sigue OPEN. */
+export const updateMobilePayment = (
+  id: string,
+  data: { amount: number; ref: string },
+) => performUpdateMobilePayment(id, data, false);
+
+/** Uso del admin: permitido sin importar el estado del turno (PENDING/CHECKED). */
+export const adminUpdateMobilePayment = (
+  id: string,
+  data: { amount: number; ref: string },
+) => performUpdateMobilePayment(id, data, true);
 
 /**
- * Elimina (soft delete) un pago móvil y descuenta su monto del acumulador
- * `total_mobile_payments` del turno en la misma transacción.
- * Bloqueado si el turno ya no está OPEN.
+ * Elimina (soft delete) un pago móvil, descuenta su monto de
+ * `total_mobile_payments` y de `money.bs.mobile` (ver nota en
+ * `performUpdateMobilePayment`) en la misma transacción.
  */
-export const softDeleteMobilePayment = async (
+async function performDeleteMobilePayment(
   id: string,
-): Promise<CustomApiResponse> => {
+  allowClosed: boolean,
+): Promise<CustomApiResponse> {
   try {
     await runTransaction(db, async (tx) => {
       const paymentRef = doc(db, "mobile_payments", id);
@@ -136,7 +160,9 @@ export const softDeleteMobilePayment = async (
       const shiftRef = doc(db, "register_balances", payment.shift_id);
       const shiftSnap = await tx.get(shiftRef);
       if (!shiftSnap.exists()) throw new Error("SHIFT_NOT_FOUND");
-      if (shiftSnap.data().status !== "OPEN") throw new Error("SHIFT_CLOSED");
+      if (!allowClosed && shiftSnap.data().status !== "OPEN") {
+        throw new Error("SHIFT_CLOSED");
+      }
 
       tx.update(paymentRef, {
         is_deleted: true,
@@ -145,6 +171,7 @@ export const softDeleteMobilePayment = async (
 
       tx.update(shiftRef, {
         total_mobile_payments: increment(-payment.amount),
+        "money.bs.mobile": increment(-payment.amount),
         updated_at: new Date(),
       });
     });
@@ -169,4 +196,12 @@ export const softDeleteMobilePayment = async (
       message: API_MESSAGES.mobilePayments.error,
     };
   }
-};
+}
+
+/** Uso del cajero: solo permitido mientras el turno sigue OPEN. */
+export const softDeleteMobilePayment = (id: string) =>
+  performDeleteMobilePayment(id, false);
+
+/** Uso del admin: permitido sin importar el estado del turno (PENDING/CHECKED). */
+export const adminDeleteMobilePayment = (id: string) =>
+  performDeleteMobilePayment(id, true);

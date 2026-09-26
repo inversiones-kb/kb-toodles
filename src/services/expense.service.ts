@@ -59,14 +59,17 @@ export const createExpense = async (
 
 /**
  * Edita el monto/motivo de un gasto ya registrado, ajustando el acumulador
- * `total_expenses` del turno por la diferencia (delta) en la misma transacción
- * para que nunca quede desincronizado del detalle real de gastos.
- * Bloqueado si el turno ya no está OPEN (evita corromper un cuadre ya cerrado).
+ * `total_expenses` del turno por la diferencia (delta) en la misma
+ * transacción para que nunca quede desincronizado del detalle real de
+ * gastos. `allowClosed` decide si se permite sobre un turno que ya no está
+ * OPEN — false para el cajero (no puede tocar un turno ya cerrado), true
+ * para el admin corrigiendo un cuadre post-cierre.
  */
-export const updateExpense = async (
+async function performUpdateExpense(
   id: string,
   data: { amount: number; description: string },
-): Promise<CustomApiResponse> => {
+  allowClosed: boolean,
+): Promise<CustomApiResponse> {
   try {
     await runTransaction(db, async (tx) => {
       const expenseRef = doc(db, "expenses", id);
@@ -79,7 +82,9 @@ export const updateExpense = async (
       const shiftRef = doc(db, "register_balances", expense.shift_id);
       const shiftSnap = await tx.get(shiftRef);
       if (!shiftSnap.exists()) throw new Error("SHIFT_NOT_FOUND");
-      if (shiftSnap.data().status !== "OPEN") throw new Error("SHIFT_CLOSED");
+      if (!allowClosed && shiftSnap.data().status !== "OPEN") {
+        throw new Error("SHIFT_CLOSED");
+      }
 
       const delta = data.amount - expense.amount;
 
@@ -115,16 +120,29 @@ export const updateExpense = async (
       message: API_MESSAGES.expenses.error,
     };
   }
-};
+}
+
+/** Uso del cajero: solo permitido mientras el turno sigue OPEN. */
+export const updateExpense = (
+  id: string,
+  data: { amount: number; description: string },
+) => performUpdateExpense(id, data, false);
+
+/** Uso del admin: permitido sin importar el estado del turno (PENDING/CHECKED). */
+export const adminUpdateExpense = (
+  id: string,
+  data: { amount: number; description: string },
+) => performUpdateExpense(id, data, true);
 
 /**
  * Elimina (soft delete) un gasto y descuenta su monto del acumulador
- * `total_expenses` del turno en la misma transacción.
- * Bloqueado si el turno ya no está OPEN.
+ * `total_expenses` del turno en la misma transacción. Mismo `allowClosed`
+ * que en `performUpdateExpense`.
  */
-export const softDeleteExpense = async (
+async function performDeleteExpense(
   id: string,
-): Promise<CustomApiResponse> => {
+  allowClosed: boolean,
+): Promise<CustomApiResponse> {
   try {
     await runTransaction(db, async (tx) => {
       const expenseRef = doc(db, "expenses", id);
@@ -137,7 +155,9 @@ export const softDeleteExpense = async (
       const shiftRef = doc(db, "register_balances", expense.shift_id);
       const shiftSnap = await tx.get(shiftRef);
       if (!shiftSnap.exists()) throw new Error("SHIFT_NOT_FOUND");
-      if (shiftSnap.data().status !== "OPEN") throw new Error("SHIFT_CLOSED");
+      if (!allowClosed && shiftSnap.data().status !== "OPEN") {
+        throw new Error("SHIFT_CLOSED");
+      }
 
       tx.update(expenseRef, {
         is_deleted: true,
@@ -170,4 +190,12 @@ export const softDeleteExpense = async (
       message: API_MESSAGES.expenses.error,
     };
   }
-};
+}
+
+/** Uso del cajero: solo permitido mientras el turno sigue OPEN. */
+export const softDeleteExpense = (id: string) =>
+  performDeleteExpense(id, false);
+
+/** Uso del admin: permitido sin importar el estado del turno (PENDING/CHECKED). */
+export const adminDeleteExpense = (id: string) =>
+  performDeleteExpense(id, true);

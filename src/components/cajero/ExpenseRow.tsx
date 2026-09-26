@@ -19,17 +19,28 @@ import { updateExpense, softDeleteExpense } from "@/services/expense.service";
 import { dateToString, formatOnlyTime } from "@/utils/dateUtils";
 import { moneyFormatter } from "@/utils/formatters";
 import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
+import { CustomApiResponse } from "@/types/coreTypes";
 
 interface ExpenseRowProps {
   expense: Expense;
   editable: boolean;
   onChanged: () => void;
+  // Por defecto usa las funciones del cajero (solo permitidas en turno OPEN).
+  // Las vistas de admin (cuadre-de-cajas/diario, revision) inyectan las
+  // variantes admin* que funcionan sin importar el estado del turno.
+  onUpdate?: (
+    id: string,
+    data: { amount: number; description: string },
+  ) => Promise<CustomApiResponse>;
+  onDelete?: (id: string) => Promise<CustomApiResponse>;
 }
 
 export default function ExpenseRow({
   expense,
   editable,
   onChanged,
+  onUpdate = updateExpense,
+  onDelete = softDeleteExpense,
 }: ExpenseRowProps) {
   const editDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -54,7 +65,7 @@ export default function ExpenseRow({
     }
 
     setIsSaving(true);
-    const res = await updateExpense(expense.id, {
+    const res = await onUpdate(expense.id, {
       amount: Number(data.amount),
       description: data.description,
     });
@@ -69,7 +80,7 @@ export default function ExpenseRow({
 
   const onConfirmDelete = async () => {
     setIsDeleting(true);
-    const res = await softDeleteExpense(expense.id);
+    const res = await onDelete(expense.id);
     setIsDeleting(false);
 
     if (!res.success) return toast.error(res.message);

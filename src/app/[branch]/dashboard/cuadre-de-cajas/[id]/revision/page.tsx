@@ -34,11 +34,21 @@ import { useCollectionQuery } from "@/hooks/useCollectionQuery";
 import { where } from "firebase/firestore";
 import { Expense } from "@/validations/expense.validations";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
-import { dateToString, formatOnlyTime } from "@/utils/dateUtils";
+import { dateToString } from "@/utils/dateUtils";
 import { transformExpense } from "@/utils/normalizers/normalizeExpenses";
 import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
 import { MobilePayment } from "@/validations/mobile_payment.validations";
 import { transformMobilePayment } from "@/utils/normalizers/normalizeMobilePayments";
+import ExpenseRow from "@/components/cajero/ExpenseRow";
+import MobilePaymentRow from "@/components/cajero/MobilePaymentRow";
+import {
+  adminUpdateExpense,
+  adminDeleteExpense,
+} from "@/services/expense.service";
+import {
+  adminUpdateMobilePayment,
+  adminDeleteMobilePayment,
+} from "@/services/mobile-payment.service";
 
 export default function CheckRegisterBalancePage() {
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
@@ -51,29 +61,36 @@ export default function CheckRegisterBalancePage() {
     data,
     isLoading: docIsLoading,
     error,
+    refetch: refetchShift,
   } = useDoc<RegisterBalance>("register_balances", id?.toString());
 
-  const { data: expenses, isLoading: expensesLoading } =
-    useCollectionQuery<Expense>(
-      "expenses",
-      [
-        where("shift_id", "==", data?.id || ""),
-        where("is_deleted", "==", false),
-      ],
-      [data?.id],
-      transformExpense,
-    );
+  const {
+    data: expenses,
+    isLoading: expensesLoading,
+    refetch: refetchExpenses,
+  } = useCollectionQuery<Expense>(
+    "expenses",
+    [
+      where("shift_id", "==", data?.id || ""),
+      where("is_deleted", "==", false),
+    ],
+    [data?.id],
+    transformExpense,
+  );
 
-  const { data: mobilePayments, isLoading: mobilePaymentsLoading } =
-    useCollectionQuery<MobilePayment>(
-      "mobile_payments",
-      [
-        where("shift_id", "==", data?.id || ""),
-        where("is_deleted", "==", false),
-      ],
-      [data?.id],
-      transformMobilePayment,
-    );
+  const {
+    data: mobilePayments,
+    isLoading: mobilePaymentsLoading,
+    refetch: refetchMobilePayments,
+  } = useCollectionQuery<MobilePayment>(
+    "mobile_payments",
+    [
+      where("shift_id", "==", data?.id || ""),
+      where("is_deleted", "==", false),
+    ],
+    [data?.id],
+    transformMobilePayment,
+  );
 
   const {
     register,
@@ -100,6 +117,18 @@ export default function CheckRegisterBalancePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const router = useBranchRouter();
+
+  // Refresca la lista local y el documento del turno (total_expenses /
+  // total_mobile_payments / money.bs.mobile), que este formulario lee de
+  // `data` al popular sus valores por defecto.
+  const handleExpenseChanged = () => {
+    refetchExpenses();
+    refetchShift();
+  };
+  const handleMobilePaymentChanged = () => {
+    refetchMobilePayments();
+    refetchShift();
+  };
 
   const handlePreSubmit: SubmitHandler<RegisterBalanceInput> = async (data) => {
     setPendingData(data);
@@ -557,30 +586,14 @@ export default function CheckRegisterBalancePage() {
                       expenses.length ? (
                         <div className="flex flex-col gap-1.5">
                           {expenses.map((expense) => (
-                            <div
+                            <ExpenseRow
                               key={expense.id}
-                              className="rounded-lg border border-stone-700 bg-layer-3 w-full items-center flex px-2 py-2"
-                            >
-                              <div className="flex flex-col flex-1">
-                                <p className="text-sm first-letter:uppercase">
-                                  {expense.description || "(Sin motivo)"}
-                                </p>
-                                <p className="text-small text-soft-light">
-                                  {dateToString(
-                                    expense.created_at,
-                                    "DD/MM/YYYY",
-                                  )}{" "}
-                                  {formatOnlyTime(expense.created_at)}
-                                </p>
-                              </div>
-                              <div className="gap-2 flex items-center">
-                                <p className="text-sm">
-                                  {expense.currency}{" "}
-                                  {moneyFormatter.format(expense.amount)}
-                                </p>
-                              </div>
-                              <p></p>
-                            </div>
+                              expense={expense}
+                              editable
+                              onUpdate={adminUpdateExpense}
+                              onDelete={adminDeleteExpense}
+                              onChanged={handleExpenseChanged}
+                            />
                           ))}
                         </div>
                       ) : (
@@ -600,24 +613,14 @@ export default function CheckRegisterBalancePage() {
                       mobilePayments.length ? (
                         <div className="flex flex-col gap-1.5">
                           {mobilePayments.map((payment) => (
-                            <div
+                            <MobilePaymentRow
                               key={payment.id}
-                              className="rounded-lg border border-stone-700 bg-layer-3 w-full items-center flex px-2 py-2"
-                            >
-                              <div className="flex flex-col flex-1">
-                                <p className="text-small text-soft-light">
-                                  {dateToString(
-                                    payment.created_at,
-                                    "DD/MM/YYYY",
-                                  )}{" "}
-                                  {formatOnlyTime(payment.created_at)}
-                                </p>
-                              </div>
-
-                              <p className="text-sm">
-                                {moneyFormatter.format(payment.amount)} bs
-                              </p>
-                            </div>
+                              payment={payment}
+                              editable
+                              onUpdate={adminUpdateMobilePayment}
+                              onDelete={adminDeleteMobilePayment}
+                              onChanged={handleMobilePaymentChanged}
+                            />
                           ))}
                         </div>
                       ) : (

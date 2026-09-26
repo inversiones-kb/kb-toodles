@@ -17,9 +17,18 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import InputGroupSection from "../forms/InputGroupSection";
 import { moneyFormatter } from "@/utils/formatters";
-import { dateToString, formatOnlyTime } from "@/utils/dateUtils";
 import { FormattedNumberInput } from "../forms/FormattedNumberInput";
 import { REGISTER_BALANCE_STATUS_MAP } from "@/types/registerBalance.types";
+import ExpenseRow from "@/components/cajero/ExpenseRow";
+import MobilePaymentRow from "@/components/cajero/MobilePaymentRow";
+import {
+  adminUpdateExpense,
+  adminDeleteExpense,
+} from "@/services/expense.service";
+import {
+  adminUpdateMobilePayment,
+  adminDeleteMobilePayment,
+} from "@/services/mobile-payment.service";
 
 interface Props {
   data: RegisterBalance;
@@ -29,27 +38,33 @@ interface Props {
 const RegisterBalanceCard = ({ data, refetch }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const { data: expenses, isLoading: expensesLoading } =
-    useCollectionQuery<Expense>(
-      "expenses",
-      [
-        where("shift_id", "==", data?.id || ""),
-        where("is_deleted", "==", false),
-      ],
-      [data?.id],
-      transformExpense,
-    );
+  const {
+    data: expenses,
+    isLoading: expensesLoading,
+    refetch: refetchExpenses,
+  } = useCollectionQuery<Expense>(
+    "expenses",
+    [
+      where("shift_id", "==", data?.id || ""),
+      where("is_deleted", "==", false),
+    ],
+    [data?.id],
+    transformExpense,
+  );
 
-  const { data: mobilePayments, isLoading: mobilePaymentsLoading } =
-    useCollectionQuery<MobilePayment>(
-      "mobile_payments",
-      [
-        where("shift_id", "==", data?.id || ""),
-        where("is_deleted", "==", false),
-      ],
-      [data?.id],
-      transformMobilePayment,
-    );
+  const {
+    data: mobilePayments,
+    isLoading: mobilePaymentsLoading,
+    refetch: refetchMobilePayments,
+  } = useCollectionQuery<MobilePayment>(
+    "mobile_payments",
+    [
+      where("shift_id", "==", data?.id || ""),
+      where("is_deleted", "==", false),
+    ],
+    [data?.id],
+    transformMobilePayment,
+  );
 
   const {
     register,
@@ -73,6 +88,18 @@ const RegisterBalanceCard = ({ data, refetch }: Props) => {
       },
     },
   });
+
+  // Refresca la lista local (montos, fila borrada/editada) y el documento
+  // del turno en el listado padre (total_expenses/total_mobile_payments,
+  // que el "Resumen de caja" de esta card lee directo de `data`).
+  const handleExpenseChanged = () => {
+    refetchExpenses();
+    if (refetch) refetch();
+  };
+  const handleMobilePaymentChanged = () => {
+    refetchMobilePayments();
+    if (refetch) refetch();
+  };
 
   const onSubmit: SubmitHandler<RegisterBalanceInput> = async (formData) => {
     console.log(formData);
@@ -354,27 +381,14 @@ const RegisterBalanceCard = ({ data, refetch }: Props) => {
             expenses.length ? (
               <div className="flex flex-col gap-1.5">
                 {expenses.map((expense) => (
-                  <div
+                  <ExpenseRow
                     key={expense.id}
-                    className="rounded-lg border border-stone-700 bg-layer-3 w-full items-center flex px-2 py-2"
-                  >
-                    <div className="flex flex-col flex-1">
-                      <p className="text-sm first-letter:uppercase">
-                        {expense.description || "(Sin motivo)"}
-                      </p>
-                      <p className="text-small text-soft-light">
-                        {dateToString(expense.created_at, "DD/MM/YYYY")}{" "}
-                        {formatOnlyTime(expense.created_at)}
-                      </p>
-                    </div>
-                    <div className="gap-2 flex items-center">
-                      <p className="text-sm">
-                        {expense.currency}{" "}
-                        {moneyFormatter.format(expense.amount)}
-                      </p>
-                    </div>
-                    <p></p>
-                  </div>
+                    expense={expense}
+                    editable
+                    onUpdate={adminUpdateExpense}
+                    onDelete={adminDeleteExpense}
+                    onChanged={handleExpenseChanged}
+                  />
                 ))}
               </div>
             ) : (
@@ -394,21 +408,14 @@ const RegisterBalanceCard = ({ data, refetch }: Props) => {
             mobilePayments.length ? (
               <div className="flex flex-col gap-1.5">
                 {mobilePayments.map((payment) => (
-                  <div
+                  <MobilePaymentRow
                     key={payment.id}
-                    className="rounded-lg border border-stone-700 bg-layer-3 w-full items-center flex px-2 py-2"
-                  >
-                    <div className="flex flex-col flex-1">
-                      <p className="text-small text-soft-light">
-                        {dateToString(payment.created_at, "DD/MM/YYYY")}{" "}
-                        {formatOnlyTime(payment.created_at)}
-                      </p>
-                    </div>
-
-                    <p className="text-sm">
-                      {moneyFormatter.format(payment.amount)} bs
-                    </p>
-                  </div>
+                    payment={payment}
+                    editable
+                    onUpdate={adminUpdateMobilePayment}
+                    onDelete={adminDeleteMobilePayment}
+                    onChanged={handleMobilePaymentChanged}
+                  />
                 ))}
               </div>
             ) : (
