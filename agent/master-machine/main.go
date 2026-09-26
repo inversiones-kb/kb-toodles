@@ -316,8 +316,12 @@ func run(cfg Config, queriesPath, date, caja string, doIngest bool, out *os.File
 }
 
 func main() {
-	configPath := flag.String("config", "agent/config.json", "path to config.json (see master-machine/config.example.json)")
-	queriesPath := flag.String("queries", "agent/master-machine/queries/cash_report.sql", "path to the parameterized query file")
+	// Defaults assume the binary is run from the deployment root (whatever
+	// that folder is named) with the layout: config.json, bin/master-machine,
+	// master-machine/queries/cash_report.sql — matching what run-daily.ps1
+	// copies over and what "agent/" contains in this repo.
+	configPath := flag.String("config", "config.json", "path to config.json (see master-machine/config.example.json)")
+	queriesPath := flag.String("queries", "master-machine/queries/cash_report.sql", "path to the parameterized query file")
 	date := flag.String("date", time.Now().Format("2006-01-02"), "report date (YYYY-MM-DD)")
 	caja := flag.String("caja", "", "IDCAJA / checkout code to filter by (empty = all; required to ingest)")
 	ingest := flag.Bool("ingest", true, "POST the summary to the app's /api/ingest endpoint")
