@@ -73,6 +73,10 @@ export async function createUserAction(
 
 export async function adminResetPassword(uid: string, newPassword: string) {
   try {
+    if (!adminAuth) {
+      return { success: false, error: "Firebase Admin no está disponible." };
+    }
+
     // Validar que la contraseña tenga al menos 6 caracteres (regla de Firebase)
     if (newPassword.length < 6) {
       return {
@@ -97,6 +101,10 @@ export type BasicUser = Pick<User, "name" | "last_name" | "email">;
 
 export async function getBasicUsersList(): Promise<BasicUser[]> {
   try {
+    if (!adminDb) {
+      throw new Error("Firebase Admin no está disponible.");
+    }
+
     const snapshot = await adminDb
       .collection("users")
       .select("name", "last_name", "email") // 🔥 La proyección de Firestore
@@ -123,6 +131,13 @@ export async function getBasicUsersList(): Promise<BasicUser[]> {
 
 export async function migrateCashierPasswords() {
   try {
+    if (!adminDb || !adminAuth) {
+      return {
+        success: false,
+        message: "Firebase Admin no está disponible.",
+      };
+    }
+
     // 1. Buscamos solo a los cajeros en Firestore
     const snapshot = await adminDb
       .collection("users")

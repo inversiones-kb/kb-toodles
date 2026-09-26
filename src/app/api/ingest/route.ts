@@ -36,6 +36,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
   }
 
+  if (!adminDb) {
+    return NextResponse.json(
+      { success: false, message: "Firebase Admin failed to initialize" },
+      { status: 500 },
+    );
+  }
+
   let body: unknown;
   try {
     body = await req.json();
