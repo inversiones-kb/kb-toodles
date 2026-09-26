@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# ADN Agent
+agent/bin/
+agent/config.json
+agent/*.db

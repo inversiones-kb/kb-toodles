@@ -140,7 +140,8 @@ export default function CheckRegisterBalancePage() {
           newData.money.bs.pos_system || newData.money.bs.pos;
 
         newData.money.bs.mobile = totalMobilePayments;
-        newData.money.bs.mobile_system = totalMobilePayments;
+        newData.money.bs.mobile_system =
+          newData.money.bs.mobile_system || totalMobilePayments;
       }
 
       reset(newData);

@@ -1,0 +1,6 @@
+{
+  "dsn": "user:password@tcp(127.0.0.1:3306)/adn?parseTime=true&loc=Local",
+  "branch": "la-fria",
+  "ingest_url": "http://localhost:3000/api/ingest",
+  "ingest_key": "shared secret, must match INGEST_API_KEY in the app's .env.local / server env"
+}
