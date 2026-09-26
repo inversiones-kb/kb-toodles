@@ -5,9 +5,11 @@
 # 1,2,3 (Colon's current registers). Override for a manual/backfill run:
 #   .\run-daily.ps1 -Date 2026-09-12
 #   .\run-daily.ps1 -Date 2026-09-12 -Cajas 01,02
+#   .\run-daily.ps1 -Date 2026-09-12 -IncludeChecked   # one-off remediation re-run
 param(
     [string]$Date = (Get-Date).AddDays(-1).ToString('yyyy-MM-dd'),
-    [string[]]$Cajas = @('01', '02', '03')
+    [string[]]$Cajas = @('01', '02', '03'),
+    [switch]$IncludeChecked
 )
 
 $Root = $PSScriptRoot
@@ -20,6 +22,7 @@ $LogFile = Join-Path $LogDir "$Date.log"
 
 foreach ($caja in $Cajas) {
     "=== $(Get-Date -Format o) caja=$caja date=$Date ===" | Tee-Object -FilePath $LogFile -Append
-    & $Exe -config $Config -queries $Queries -date $Date -caja $caja 2>&1 |
-        Tee-Object -FilePath $LogFile -Append
+    $exeArgs = @('-config', $Config, '-queries', $Queries, '-date', $Date, '-caja', $caja)
+    if ($IncludeChecked) { $exeArgs += '-include-checked' }
+    & $Exe @exeArgs 2>&1 | Tee-Object -FilePath $LogFile -Append
 }
