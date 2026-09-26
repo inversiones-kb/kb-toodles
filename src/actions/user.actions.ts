@@ -1,6 +1,7 @@
 "use server";
 
-import { adminAuth, adminDb } from "@/config/firebase-admin";
+import { adminDb } from "@/config/firebase-admin";
+import { adminAuth } from "@/config/firebase-admin-auth";
 import { CustomApiResponse } from "@/types/coreTypes";
 import { USER_ROLE_MAP } from "@/types/user.types";
 import { API_MESSAGES } from "@/utils/apiUtils";
