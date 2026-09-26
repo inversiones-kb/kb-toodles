@@ -18,26 +18,20 @@ func TestLoadQueries(t *testing.T) {
 		}
 	}
 
-	wantArgCount := map[string]int{
-		"Datos":     8,
-		"ResumenT1": 8,
-		"ResumenT2": 8,
-		"Ventas":    4,
-		"Billetes":  1,
-	}
 	for name, body := range queries {
-		if got, want := len(argsForCount(t, name)), wantArgCount[name]; got != want {
+		want := len(tokenOrder[name])
+		if got := len(argsForCount(t, name)); got != want {
 			t.Errorf("%s: argsFor returned %d params, want %d", name, got, want)
 		}
-		if got := placeholderCount(body); got != wantArgCount[name] {
-			t.Errorf("%s: query has %d \"?\" placeholders, want %d", name, got, wantArgCount[name])
+		if got := placeholderCount(body); got != want {
+			t.Errorf("%s: query has %d \"?\" placeholders, want %d", name, got, want)
 		}
 	}
 }
 
 func argsForCount(t *testing.T, section string) []any {
 	t.Helper()
-	args, err := argsFor(section, "2026-01-01", "01")
+	args, err := argsFor(section, "2026-01-01", "01", "07:00:00", "20:00:00")
 	if err != nil {
 		t.Fatalf("argsFor(%s): %v", section, err)
 	}
@@ -62,19 +56,12 @@ func TestApplyRow(t *testing.T) {
 func TestNewIngestPayload(t *testing.T) {
 	s := Summary{POSSystem: 183690.29, MobileSystem: 3092.87, CopSystem: 417730.00}
 
-	p, err := newIngestPayload("la-fria", "02", "2026-09-24", s)
-	if err != nil {
-		t.Fatalf("newIngestPayload: %v", err)
-	}
-	if p.CheckoutNumber != 2 {
-		t.Errorf("CheckoutNumber = %d, want 2 (from caja %q)", p.CheckoutNumber, "02")
+	p := newIngestPayload("Et7dIRHDE0ZBKJPRa1GP", s)
+	if p.DocID != "Et7dIRHDE0ZBKJPRa1GP" {
+		t.Errorf("DocID = %q, want the given shift id", p.DocID)
 	}
 	if p.Money.Bs.PosSystem != s.POSSystem || p.Money.Bs.MobileSystem != s.MobileSystem || p.Money.Cop.System != s.CopSystem {
 		t.Errorf("payload money = %+v, want it to match summary %+v", p.Money, s)
-	}
-
-	if _, err := newIngestPayload("la-fria", "", "2026-09-24", s); err == nil {
-		t.Error("newIngestPayload with empty caja: want error, got nil")
 	}
 }
 

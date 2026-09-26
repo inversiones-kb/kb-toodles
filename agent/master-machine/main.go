@@ -1,6 +1,7 @@
-// Command master-machine runs the parameterized ADN cash-register report
-// queries (see queries/cash_report.sql) against a MySQL/MariaDB database and
-// prints the results as JSON.
+// Command master-machine looks up each PENDING shift for a checkout/date,
+// runs the parameterized ADN cash-register report queries (see
+// queries/cash_report.sql) scoped to that shift's own open/close window,
+// and posts the resulting summary to the app's /api/ingest endpoint.
 package main
 
 import (
@@ -12,9 +13,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -73,19 +74,38 @@ func loadQueries(path string) (queries map[string]string, order []string, err er
 	return queries, order, nil
 }
 
-// argsFor returns the bind parameters for a named section, matching the
-// placeholder order baked into queries/cash_report.sql.
-func argsFor(section, date, caja string) ([]any, error) {
-	switch section {
-	case "Datos", "ResumenT1", "ResumenT2":
-		return []any{date, date, caja, caja, date, date, caja, caja}, nil
-	case "Ventas":
-		return []any{caja, caja, date, date}, nil
-	case "Billetes":
-		return []any{caja}, nil
-	default:
+// tokenOrder documents and drives the exact bind-parameter sequence per
+// section in queries/cash_report.sql (see that file's own header comment,
+// which must stay in sync with this): D=date, C=caja, S=shift start time,
+// E=shift end time (S/E as HH:MM:SS local to the shift, not the store's
+// whole business day).
+var tokenOrder = map[string]string{
+	"Datos":     "DDSECCDDSECC",
+	"ResumenT1": "DDSECCDDCCSE",
+	"ResumenT2": "DDSECCDDSECC",
+	"Ventas":    "CCDDSE",
+	"Billetes":  "CSE",
+}
+
+func argsFor(section, date, caja, shiftStart, shiftEnd string) ([]any, error) {
+	order, ok := tokenOrder[section]
+	if !ok {
 		return nil, fmt.Errorf("unknown query section %q", section)
 	}
+	args := make([]any, len(order))
+	for i, t := range order {
+		switch t {
+		case 'D':
+			args[i] = date
+		case 'C':
+			args[i] = caja
+		case 'S':
+			args[i] = shiftStart
+		case 'E':
+			args[i] = shiftEnd
+		}
+	}
+	return args, nil
 }
 
 // Row names from the ResumenT1/ResumenT2 "RESUMEN GENERAL DE CAJA" overview,
@@ -118,12 +138,12 @@ func applyRow(s *Summary, nombre string, monto float64) {
 	}
 }
 
-// buildSummary runs ResumenT1 and ResumenT2 and reduces them to the three
-// overview totals a checkout report actually needs to persist.
-func buildSummary(db *sql.DB, queries map[string]string, date, caja string) (Summary, error) {
+// buildSummary runs ResumenT1 and ResumenT2, scoped to one shift's time
+// window, and reduces them to the three overview totals that shift needs.
+func buildSummary(db *sql.DB, queries map[string]string, date, caja, shiftStart, shiftEnd string) (Summary, error) {
 	var s Summary
 	for _, section := range []string{"ResumenT1", "ResumenT2"} {
-		args, err := argsFor(section, date, caja)
+		args, err := argsFor(section, date, caja, shiftStart, shiftEnd)
 		if err != nil {
 			return s, err
 		}
@@ -183,12 +203,75 @@ func rowsToMaps(rows *sql.Rows) ([]map[string]any, error) {
 	return out, rows.Err()
 }
 
+// Shift is one PENDING register_balance's shift window, as returned by
+// GET <ingest_url>/shifts.
+type Shift struct {
+	ID        string `json:"id"`
+	StartTime string `json:"start_time"`
+	EndTime   string `json:"end_time"`
+}
+
+// listShifts asks the app which PENDING register_balances exist for this
+// branch/checkout/date, so each can be reported on with its own time
+// window instead of guessing at a single whole-day match (a checkout can
+// have more than one shift/cashier in a day).
+func listShifts(cfg Config, caja, date string) ([]Shift, error) {
+	if cfg.IngestURL == "" || cfg.IngestKey == "" {
+		return nil, fmt.Errorf("config is missing \"ingest_url\" or \"ingest_key\"")
+	}
+	if cfg.Branch == "" {
+		return nil, fmt.Errorf("config is missing \"branch\"")
+	}
+
+	u, err := url.Parse(cfg.IngestURL)
+	if err != nil {
+		return nil, fmt.Errorf("parsing ingest_url: %w", err)
+	}
+	u.Path = strings.TrimSuffix(u.Path, "/") + "/shifts"
+	q := u.Query()
+	q.Set("branch", cfg.Branch)
+	q.Set("checkout_number", caja)
+	q.Set("date", date)
+	u.RawQuery = q.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("x-ingest-key", cfg.IngestKey)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("listing shifts from %s: %w", u.String(), err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("listing shifts returned %s: %s", resp.Status, strings.TrimSpace(string(body)))
+	}
+
+	var result struct {
+		Success bool    `json:"success"`
+		Shifts  []Shift `json:"shifts"`
+		Message string  `json:"message"`
+	}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("parsing shifts response: %w", err)
+	}
+	if !result.Success {
+		return nil, fmt.Errorf("listing shifts: %s", result.Message)
+	}
+	return result.Shifts, nil
+}
+
 // ingestPayload matches IngestPayload in src/app/api/ingest/route.ts.
 type ingestPayload struct {
-	Branch         string `json:"branch"`
-	CheckoutNumber int    `json:"checkout_number"`
-	Date           string `json:"date"`
-	Money          struct {
+	DocID string `json:"doc_id"`
+	Money struct {
 		Cop struct {
 			System float64 `json:"system"`
 		} `json:"cop"`
@@ -199,27 +282,19 @@ type ingestPayload struct {
 	} `json:"money"`
 }
 
-func newIngestPayload(branch, caja, date string, s Summary) (ingestPayload, error) {
-	checkoutNumber, err := strconv.Atoi(caja)
-	if err != nil {
-		return ingestPayload{}, fmt.Errorf("caja %q is not a valid checkout_number: %w", caja, err)
-	}
+func newIngestPayload(docID string, s Summary) ingestPayload {
 	var p ingestPayload
-	p.Branch = branch
-	p.CheckoutNumber = checkoutNumber
-	p.Date = date
+	p.DocID = docID
 	p.Money.Cop.System = s.CopSystem
 	p.Money.Bs.PosSystem = s.POSSystem
 	p.Money.Bs.MobileSystem = s.MobileSystem
-	return p, nil
+	return p
 }
 
-// postSummary sends the summary to the app's /api/ingest endpoint, which
-// updates the matching register_balances doc's "_system" money fields.
+// postSummary sends one shift's summary to the app's /api/ingest endpoint,
+// which updates that specific register_balances doc's "_system" money
+// fields and marks it CHECKED.
 func postSummary(cfg Config, payload ingestPayload) error {
-	if cfg.IngestURL == "" || cfg.IngestKey == "" {
-		return fmt.Errorf("config is missing \"ingest_url\" or \"ingest_key\"")
-	}
 	body, err := json.Marshal(payload)
 	if err != nil {
 		return err
@@ -259,55 +334,59 @@ func run(cfg Config, queriesPath, date, caja string, doIngest bool, out *os.File
 		return fmt.Errorf("loading queries: %w", err)
 	}
 
-	report := make(map[string]any, len(order))
-	for _, name := range order {
-		args, err := argsFor(name, date, caja)
-		if err != nil {
-			return err
-		}
-		rows, err := db.Query(queries[name], args...)
-		if err != nil {
-			return fmt.Errorf("running query %s: %w", name, err)
-		}
-		result, err := rowsToMaps(rows)
-		rows.Close()
-		if err != nil {
-			return fmt.Errorf("reading results for %s: %w", name, err)
-		}
-		report[name] = result
-	}
-
-	summary, err := buildSummary(db, queries, date, caja)
+	shifts, err := listShifts(cfg, caja, date)
 	if err != nil {
-		return fmt.Errorf("building summary: %w", err)
+		return fmt.Errorf("listing shifts: %w", err)
 	}
-	report["summary"] = map[string]any{
-		"money": map[string]any{
-			"bs": map[string]any{
-				"pos_system":    summary.POSSystem,
-				"mobile_system": summary.MobileSystem,
-			},
-			"cop": map[string]any{
-				"system": summary.CopSystem,
-			},
-		},
+	if len(shifts) == 0 {
+		fmt.Fprintf(out, "no PENDING shifts found for caja=%s date=%s\n", caja, date)
+		return nil
 	}
 
-	if doIngest {
-		if caja == "" {
-			return fmt.Errorf("-caja is required to ingest (a summary needs one specific checkout_number to update)")
+	report := make(map[string]any, len(shifts))
+	for _, shift := range shifts {
+		shiftReport := make(map[string]any, len(order)+1)
+		for _, name := range order {
+			args, err := argsFor(name, date, caja, shift.StartTime, shift.EndTime)
+			if err != nil {
+				return err
+			}
+			rows, err := db.Query(queries[name], args...)
+			if err != nil {
+				return fmt.Errorf("running query %s for shift %s: %w", name, shift.ID, err)
+			}
+			result, err := rowsToMaps(rows)
+			rows.Close()
+			if err != nil {
+				return fmt.Errorf("reading results for %s (shift %s): %w", name, shift.ID, err)
+			}
+			shiftReport[name] = result
 		}
-		if cfg.Branch == "" {
-			return fmt.Errorf("config is missing \"branch\"")
-		}
-		payload, err := newIngestPayload(cfg.Branch, caja, date, summary)
+
+		summary, err := buildSummary(db, queries, date, caja, shift.StartTime, shift.EndTime)
 		if err != nil {
-			return err
+			return fmt.Errorf("building summary for shift %s: %w", shift.ID, err)
 		}
-		if err := postSummary(cfg, payload); err != nil {
-			return fmt.Errorf("ingest: %w", err)
+		shiftReport["summary"] = map[string]any{
+			"money": map[string]any{
+				"bs": map[string]any{
+					"pos_system":    summary.POSSystem,
+					"mobile_system": summary.MobileSystem,
+				},
+				"cop": map[string]any{
+					"system": summary.CopSystem,
+				},
+			},
 		}
-		report["ingested"] = true
+
+		if doIngest {
+			if err := postSummary(cfg, newIngestPayload(shift.ID, summary)); err != nil {
+				return fmt.Errorf("ingest for shift %s: %w", shift.ID, err)
+			}
+			shiftReport["ingested"] = true
+		}
+
+		report[shift.ID] = shiftReport
 	}
 
 	enc := json.NewEncoder(out)
@@ -323,9 +402,13 @@ func main() {
 	configPath := flag.String("config", "config.json", "path to config.json (see master-machine/config.example.json)")
 	queriesPath := flag.String("queries", "master-machine/queries/cash_report.sql", "path to the parameterized query file")
 	date := flag.String("date", time.Now().Format("2006-01-02"), "report date (YYYY-MM-DD)")
-	caja := flag.String("caja", "", "IDCAJA / checkout code to filter by (empty = all; required to ingest)")
-	ingest := flag.Bool("ingest", true, "POST the summary to the app's /api/ingest endpoint")
+	caja := flag.String("caja", "", "IDCAJA / checkout code (required)")
+	ingest := flag.Bool("ingest", true, "POST each shift's summary to the app's /api/ingest endpoint")
 	flag.Parse()
+
+	if *caja == "" {
+		log.Fatal("-caja is required")
+	}
 
 	cfg, err := loadConfig(*configPath)
 	if err != nil {
