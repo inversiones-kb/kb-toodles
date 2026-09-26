@@ -58,45 +58,54 @@ export async function POST(req: NextRequest) {
   const dayStart = new Date(`${date}T00:00:00`);
   const dayEnd = new Date(`${date}T23:59:59.999`);
 
-  const snapshot = await adminDb
-    .collection("register_balances")
-    .where("branch", "==", branch)
-    .where("checkout_number", "==", checkout_number)
-    .where("status", "==", "PENDING")
-    .where("open_at", ">=", dayStart)
-    .where("open_at", "<=", dayEnd)
-    .get();
+  try {
+    const snapshot = await adminDb
+      .collection("register_balances")
+      .where("branch", "==", branch)
+      .where("checkout_number", "==", checkout_number)
+      .where("status", "==", "PENDING")
+      .where("open_at", ">=", dayStart)
+      .where("open_at", "<=", dayEnd)
+      .get();
 
-  if (snapshot.empty) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: `No PENDING register_balances for branch=${branch} checkout_number=${checkout_number} date=${date}`,
-      },
-      { status: 404 },
-    );
+    if (snapshot.empty) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `No PENDING register_balances for branch=${branch} checkout_number=${checkout_number} date=${date}`,
+        },
+        { status: 404 },
+      );
+    }
+    if (snapshot.size > 1) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Ambiguous match: ${snapshot.size} PENDING register_balances for branch=${branch} checkout_number=${checkout_number} date=${date}`,
+        },
+        { status: 409 },
+      );
+    }
+
+    const docRef = snapshot.docs[0].ref;
+    await docRef.update({
+      "money.cop.system": money.cop.system,
+      "money.bs.pos_system": money.bs.pos_system,
+      "money.bs.mobile_system": money.bs.mobile_system,
+      updated_at: new Date(),
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "register_balance updated",
+      data: { id: docRef.id },
+    });
+  } catch (error) {
+    // Surfaces Firestore errors (e.g. "this query requires an index",
+    // which includes a console link to create it) to master-machine's
+    // own output, instead of only Vercel's server logs.
+    console.error("Error in /api/ingest:", error);
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
-  if (snapshot.size > 1) {
-    return NextResponse.json(
-      {
-        success: false,
-        message: `Ambiguous match: ${snapshot.size} PENDING register_balances for branch=${branch} checkout_number=${checkout_number} date=${date}`,
-      },
-      { status: 409 },
-    );
-  }
-
-  const docRef = snapshot.docs[0].ref;
-  await docRef.update({
-    "money.cop.system": money.cop.system,
-    "money.bs.pos_system": money.bs.pos_system,
-    "money.bs.mobile_system": money.bs.mobile_system,
-    updated_at: new Date(),
-  });
-
-  return NextResponse.json({
-    success: true,
-    message: "register_balance updated",
-    data: { id: docRef.id },
-  });
 }
