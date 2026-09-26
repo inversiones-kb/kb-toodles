@@ -21,7 +21,10 @@ import { orderBy, where } from "firebase/firestore";
 import CurrencySalesChart from "@/components/home/CurrencySalesChart";
 import DiffSalesChart from "@/components/home/DiffSalesChart";
 import ExpensesChart from "@/components/home/ExpensesChart";
-import { today, getLocalTimeZone } from "@internationalized/date";
+import { today, getLocalTimeZone, DateValue } from "@internationalized/date";
+import { RangeValue } from "@heroui/react";
+import DateRangePicker from "@/components/forms/DateRangePicker";
+import { useState } from "react";
 
 export default function DashboardPage() {
   const user = useAuthStore((store) => store.user);
@@ -33,9 +36,14 @@ export default function DashboardPage() {
     [user?.uid],
   );
 
-  //? Temporal minimum date to avoid data overflow in charts (updatable in the future for a DateRangePicker)
-  const minimumDate = today(getLocalTimeZone())
-    .subtract({ days: 7 })
+  const [dateRange, setDateRange] = useState<RangeValue<DateValue>>({
+    start: today(getLocalTimeZone()).subtract({ days: 7 }),
+    end: today(getLocalTimeZone()),
+  });
+
+  const startDate = dateRange.start.toDate(getLocalTimeZone());
+  const endDate = dateRange.end
+    .add({ days: 1 })
     .toDate(getLocalTimeZone());
 
   const { data, isLoading } = useCollectionQuery<RegisterBalance>(
@@ -43,19 +51,29 @@ export default function DashboardPage() {
     [
       where("branch", "==", branch),
       where("status", "in", ["CHECKED", "PENDING"]),
-      where("created_at", ">=", minimumDate),
+      where("created_at", ">=", startDate),
+      where("created_at", "<", endDate),
       orderBy("created_at", "asc"),
     ],
-    [user?.id],
+    [user?.id, dateRange],
   );
-
-  console.log(data);
 
   return (
     <main className="grid grid-cols-3 grid-rows-7 gap-5 h-full max-sm:flex max-sm:flex-col max-sm:overflow-y-auto">
       {/* CHART SECTION */}
       <section className="col-span-2 row-span-3 bg-layer-2 rounded-3xl p-3 flex flex-col gap-4">
-        <CardTitle Icon={IconCashRegister} title="Ventas" backButton={false} />
+        <CardTitle
+          Icon={IconCashRegister}
+          title="Ventas"
+          backButton={false}
+          endContent={
+            <DateRangePicker
+              defaultValue={dateRange}
+              maxValue={today(getLocalTimeZone())}
+              onChange={(value) => setDateRange(value)}
+            />
+          }
+        />
 
         <div className="flex flex-col gap-2 overflow-y-auto flex-1 pr-1.5">
           <SalesChart data={data} isLoading={isLoading} />
