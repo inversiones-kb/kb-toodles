@@ -92,12 +92,13 @@ export async function POST(req: NextRequest) {
       "money.cop.system": money.cop.system,
       "money.bs.pos_system": money.bs.pos_system,
       "money.bs.mobile_system": money.bs.mobile_system,
+      status: "CHECKED",
       updated_at: new Date(),
     });
 
     return NextResponse.json({
       success: true,
-      message: "register_balance updated",
+      message: "register_balance updated and marked CHECKED",
       data: { id: docRef.id },
     });
   } catch (error) {
