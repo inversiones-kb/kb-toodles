@@ -56,7 +56,10 @@ export default function CheckRegisterBalancePage() {
   const { data: expenses, isLoading: expensesLoading } =
     useCollectionQuery<Expense>(
       "expenses",
-      [where("shift_id", "==", data?.id || "")],
+      [
+        where("shift_id", "==", data?.id || ""),
+        where("is_deleted", "==", false),
+      ],
       [data?.id],
       transformExpense,
     );
@@ -64,7 +67,10 @@ export default function CheckRegisterBalancePage() {
   const { data: mobilePayments, isLoading: mobilePaymentsLoading } =
     useCollectionQuery<MobilePayment>(
       "mobile_payments",
-      [where("shift_id", "==", data?.id || "")],
+      [
+        where("shift_id", "==", data?.id || ""),
+        where("is_deleted", "==", false),
+      ],
       [data?.id],
       transformMobilePayment,
     );

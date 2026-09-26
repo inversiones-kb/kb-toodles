@@ -32,7 +32,10 @@ const RegisterBalanceCard = ({ data, refetch }: Props) => {
   const { data: expenses, isLoading: expensesLoading } =
     useCollectionQuery<Expense>(
       "expenses",
-      [where("shift_id", "==", data?.id || "")],
+      [
+        where("shift_id", "==", data?.id || ""),
+        where("is_deleted", "==", false),
+      ],
       [data?.id],
       transformExpense,
     );
@@ -40,7 +43,10 @@ const RegisterBalanceCard = ({ data, refetch }: Props) => {
   const { data: mobilePayments, isLoading: mobilePaymentsLoading } =
     useCollectionQuery<MobilePayment>(
       "mobile_payments",
-      [where("shift_id", "==", data?.id || "")],
+      [
+        where("shift_id", "==", data?.id || ""),
+        where("is_deleted", "==", false),
+      ],
       [data?.id],
       transformMobilePayment,
     );

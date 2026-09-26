@@ -5,7 +5,7 @@ import CardTitle from "@/components/home/CardTitle";
 import { Button, Form, Input, Spinner, Textarea } from "@heroui/react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -31,6 +31,7 @@ import {
 import { createMobilePayment } from "@/services/mobile-payment.service";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
 import { useDoc } from "@/hooks/useDoc";
+import { useFocusNextFieldOnEnter } from "@/utils/formKeyNav";
 
 export default function CashierNewMobilePayment() {
   const branch = useParams().branch as BusinessBranch;
@@ -76,6 +77,8 @@ export default function CashierNewMobilePayment() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const router = useBranchRouter();
+  const formContainerRef = useRef<HTMLDivElement>(null);
+  useFocusNextFieldOnEnter(formContainerRef);
 
   const onSubmit: SubmitHandler<MobilePaymentInput> = async (data) => {
     console.log(data);
@@ -121,7 +124,10 @@ export default function CashierNewMobilePayment() {
           backButton={true}
         />
 
-        <div className="w-full overflow-y-auto h-full flex justify-center p-4">
+        <div
+          className="w-full overflow-y-auto h-full flex justify-center p-4"
+          ref={formContainerRef}
+        >
           <Form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-md">
             {shiftLoading ? (
               <div className="w-full flex justify-center">

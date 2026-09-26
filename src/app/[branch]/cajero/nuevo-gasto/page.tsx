@@ -5,7 +5,7 @@ import CardTitle from "@/components/home/CardTitle";
 import { Button, Form, Input, Spinner, Textarea } from "@heroui/react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -26,6 +26,7 @@ import { BusinessBranch } from "@/types/businessBranch.types";
 import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
 import { useDoc } from "@/hooks/useDoc";
+import { useFocusNextFieldOnEnter } from "@/utils/formKeyNav";
 
 export default function CashierNewExpensePage() {
   const branch = useParams().branch as BusinessBranch;
@@ -69,6 +70,8 @@ export default function CashierNewExpensePage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const router = useBranchRouter();
+  const formContainerRef = useRef<HTMLDivElement>(null);
+  useFocusNextFieldOnEnter(formContainerRef);
 
   const onSubmit: SubmitHandler<ExpenseInput> = async (data) => {
     console.log(data);
@@ -113,7 +116,10 @@ export default function CashierNewExpensePage() {
           backButton={true}
         />
 
-        <div className="w-full overflow-y-auto h-full flex justify-center p-4">
+        <div
+          className="w-full overflow-y-auto h-full flex justify-center p-4"
+          ref={formContainerRef}
+        >
           <Form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-md">
             {shiftLoading ? (
               <div className="w-full flex justify-center">

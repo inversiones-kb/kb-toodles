@@ -22,7 +22,7 @@ import {
   useForm,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useAuthStore } from "@/app/context/AuthProvider";
@@ -51,12 +51,14 @@ import { Expense } from "@/validations/expense.validations";
 import BranchLink from "@/components/general/BranchLink";
 import { useBranchRouter } from "@/hooks/useBranchRouter";
 import { BusinessBranch } from "@/types/businessBranch.types";
-import { dateToString, formatOnlyTime } from "@/utils/dateUtils";
 import { NumericFormat } from "react-number-format";
 import { FormattedNumberInput } from "@/components/forms/FormattedNumberInput";
 import { MobilePayment } from "@/validations/mobile_payment.validations";
 import { useCheckoutStore } from "@/store/useCheckoutStore";
 import { useDoc } from "@/hooks/useDoc";
+import { useFocusNextFieldOnEnter } from "@/utils/formKeyNav";
+import ExpenseRow from "@/components/cajero/ExpenseRow";
+import MobilePaymentRow from "@/components/cajero/MobilePaymentRow";
 
 export default function CashierRegisterBalancePage() {
   const user = useAuthStore((store) => store.user);
@@ -90,19 +92,31 @@ export default function CashierRegisterBalancePage() {
 
   /* const shift = activeShifts[0]; */
 
-  const { data: expenses, isLoading: expensesLoading } =
-    useCollectionQuery<Expense>(
-      "expenses",
-      [where("shift_id", "==", shift ? shift.id : "")],
-      [shift],
-    );
+  const {
+    data: expenses,
+    isLoading: expensesLoading,
+    refetch: refetchExpenses,
+  } = useCollectionQuery<Expense>(
+    "expenses",
+    [
+      where("shift_id", "==", shift ? shift.id : ""),
+      where("is_deleted", "==", false),
+    ],
+    [shift],
+  );
 
-  const { data: mobilePayments, isLoading: mobilePaymentsLoading } =
-    useCollectionQuery<MobilePayment>(
-      "mobile_payments",
-      [where("shift_id", "==", shift ? shift.id : "")],
-      [shift],
-    );
+  const {
+    data: mobilePayments,
+    isLoading: mobilePaymentsLoading,
+    refetch: refetchMobilePayments,
+  } = useCollectionQuery<MobilePayment>(
+    "mobile_payments",
+    [
+      where("shift_id", "==", shift ? shift.id : ""),
+      where("is_deleted", "==", false),
+    ],
+    [shift],
+  );
 
   const {
     register,
@@ -151,6 +165,8 @@ export default function CashierRegisterBalancePage() {
 
   const [isLoading, setIsLoading] = useState(false);
   const router = useBranchRouter();
+  const formContainerRef = useRef<HTMLDivElement>(null);
+  useFocusNextFieldOnEnter(formContainerRef);
 
   const handlePreSubmit: SubmitHandler<RegisterBalanceInput> = async (data) => {
     setPendingData(data);
@@ -261,11 +277,11 @@ export default function CashierRegisterBalancePage() {
           backButton={true}
         />
 
-        <div className="w-full overflow-y-auto h-full flex justify-center p-8 pb-8">
-          <Form
-            onSubmit={handleSubmit(handlePreSubmit)}
-            className="w-full h-fit"
-          >
+        <div
+          className="w-full overflow-y-auto h-full flex justify-center p-8 pb-8"
+          ref={formContainerRef}
+        >
+          <Form onSubmit={handleSubmit(handlePreSubmit)} className="w-full h-fit">
             {/* Confirmation Modal */}
             <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
               <ModalContent>
@@ -494,28 +510,12 @@ export default function CashierRegisterBalancePage() {
                         expenses.length ? (
                           <div className="flex flex-col gap-1.5">
                             {expenses.map((expense) => (
-                              <div
+                              <ExpenseRow
                                 key={expense.id}
-                                className="rounded-lg border border-stone-700 bg-layer-3 w-full items-center flex px-2 py-2"
-                              >
-                                <div className="flex flex-col flex-1">
-                                  <p className="text-sm first-letter:uppercase">
-                                    {expense.description || "(Sin motivo)"}
-                                  </p>
-                                  <p className="text-small text-soft-light">
-                                    {dateToString(
-                                      expense.created_at,
-                                      "DD/MM/YYYY",
-                                    )}{" "}
-                                    {formatOnlyTime(expense.created_at)}
-                                  </p>
-                                </div>
-
-                                <p className="text-sm">
-                                  {expense.currency}{" "}
-                                  {moneyFormatter.format(expense.amount)}
-                                </p>
-                              </div>
+                                expense={expense}
+                                editable={shift.status === "OPEN"}
+                                onChanged={refetchExpenses}
+                              />
                             ))}
                           </div>
                         ) : (
@@ -537,24 +537,12 @@ export default function CashierRegisterBalancePage() {
                         mobilePayments.length ? (
                           <div className="flex flex-col gap-1.5">
                             {mobilePayments.map((payment) => (
-                              <div
+                              <MobilePaymentRow
                                 key={payment.id}
-                                className="rounded-lg border border-stone-700 bg-layer-3 w-full items-center flex px-2 py-2"
-                              >
-                                <div className="flex flex-col flex-1">
-                                  <p className="text-small text-soft-light">
-                                    {dateToString(
-                                      payment.created_at,
-                                      "DD/MM/YYYY",
-                                    )}{" "}
-                                    {formatOnlyTime(payment.created_at)}
-                                  </p>
-                                </div>
-
-                                <p className="text-sm">
-                                  {moneyFormatter.format(payment.amount)} bs
-                                </p>
-                              </div>
+                                payment={payment}
+                                editable={shift.status === "OPEN"}
+                                onChanged={refetchMobilePayments}
+                              />
                             ))}
                           </div>
                         ) : (

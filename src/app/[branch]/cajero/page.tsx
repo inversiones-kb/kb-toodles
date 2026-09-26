@@ -35,15 +35,12 @@ import {
   createRegisterBalance,
   openRegisterBalance,
 } from "@/services/register-balance.service";
-import {
-  dateToString,
-  formatOnlyTime,
-  formatShiftDateTime,
-} from "@/utils/dateUtils";
+import { formatShiftDateTime } from "@/utils/dateUtils";
 import clsx from "clsx";
 import { Expense } from "@/validations/expense.validations";
-import InputGroupSection from "@/components/forms/InputGroupSection";
-import { moneyFormatter } from "@/utils/formatters";
+import { MobilePayment } from "@/validations/mobile_payment.validations";
+import ExpenseRow from "@/components/cajero/ExpenseRow";
+import MobilePaymentRow from "@/components/cajero/MobilePaymentRow";
 import { useParams, useRouter } from "next/navigation";
 import { logoutUser } from "@/services/auth.service";
 import BranchLink from "@/components/general/BranchLink";
@@ -82,12 +79,31 @@ export default function CashierPage() {
     (e) => e.checkout_number === currentShift?.checkout_number,
   );
 
-  const { data: expenses, isLoading: expensesLoading } =
-    useCollectionQuery<Expense>(
-      "expenses",
-      [where("shift_id", "==", shift ? shift.id : "")],
-      [shift], // 🔥 CRUCIAL: Solo se vuelve a ejecutar si el usuario cambia
-    );
+  const {
+    data: expenses,
+    isLoading: expensesLoading,
+    refetch: refetchExpenses,
+  } = useCollectionQuery<Expense>(
+    "expenses",
+    [
+      where("shift_id", "==", shift ? shift.id : ""),
+      where("is_deleted", "==", false),
+    ],
+    [shift], // 🔥 CRUCIAL: Solo se vuelve a ejecutar si el usuario cambia
+  );
+
+  const {
+    data: mobilePayments,
+    isLoading: mobilePaymentsLoading,
+    refetch: refetchMobilePayments,
+  } = useCollectionQuery<MobilePayment>(
+    "mobile_payments",
+    [
+      where("shift_id", "==", shift ? shift.id : ""),
+      where("is_deleted", "==", false),
+    ],
+    [shift],
+  );
 
   const handleOpenShift = async () => {
     if (!user || !branch) return;
@@ -306,30 +322,45 @@ export default function CashierPage() {
                   expenses.length ? (
                     <div className="flex flex-col gap-1.5">
                       {expenses.map((expense) => (
-                        <div
+                        <ExpenseRow
                           key={expense.id}
-                          className="rounded-lg border border-stone-700 bg-layer-3 w-full items-center flex px-2 py-2"
-                        >
-                          <div className="flex flex-col flex-1">
-                            <p className="text-sm first-letter:uppercase">
-                              {expense.description || "(Sin motivo)"}
-                            </p>
-                            <p className="text-small text-soft-light">
-                              {dateToString(expense.created_at, "DD/MM/YYYY")}{" "}
-                              {formatOnlyTime(expense.created_at)}
-                            </p>
-                          </div>
-
-                          <p className="text-sm">
-                            {expense.currency}{" "}
-                            {moneyFormatter.format(expense.amount)}
-                          </p>
-                        </div>
+                          expense={expense}
+                          editable={shift.status === "OPEN"}
+                          onChanged={refetchExpenses}
+                        />
                       ))}
                     </div>
                   ) : (
                     <p className="text-sm text-soft-light font-light text-center pb-2">
                       No hay gastos registrados
+                    </p>
+                  )
+                ) : null}
+
+                <header className="w-full sticky top-0 bg-layer-2 pb-2 pt-2">
+                  <h6 className="text-sm text-soft-light">
+                    Datos de los pagos móvil
+                  </h6>
+                </header>
+                {mobilePaymentsLoading ? (
+                  <Spinner label="Cargando pagos móvil..." />
+                ) : null}
+
+                {!mobilePaymentsLoading && mobilePayments ? (
+                  mobilePayments.length ? (
+                    <div className="flex flex-col gap-1.5">
+                      {mobilePayments.map((payment) => (
+                        <MobilePaymentRow
+                          key={payment.id}
+                          payment={payment}
+                          editable={shift.status === "OPEN"}
+                          onChanged={refetchMobilePayments}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-soft-light font-light text-center pb-2">
+                      No hay pagos móvil registrados
                     </p>
                   )
                 ) : null}

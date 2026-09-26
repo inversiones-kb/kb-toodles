@@ -4,6 +4,7 @@ import {
   doc,
   updateDoc,
   increment,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "@/firebaseConfig";
 import { ExpenseInput } from "@/validations/expense.validations";
@@ -56,17 +57,97 @@ export const createExpense = async (
   }
 };
 
+/**
+ * Edita el monto/motivo de un gasto ya registrado, ajustando el acumulador
+ * `total_expenses` del turno por la diferencia (delta) en la misma transacción
+ * para que nunca quede desincronizado del detalle real de gastos.
+ * Bloqueado si el turno ya no está OPEN (evita corromper un cuadre ya cerrado).
+ */
+export const updateExpense = async (
+  id: string,
+  data: { amount: number; description: string },
+): Promise<CustomApiResponse> => {
+  try {
+    await runTransaction(db, async (tx) => {
+      const expenseRef = doc(db, "expenses", id);
+      const expenseSnap = await tx.get(expenseRef);
+      if (!expenseSnap.exists()) throw new Error("NOT_FOUND");
+
+      const expense = expenseSnap.data();
+      if (expense.is_deleted) throw new Error("ALREADY_DELETED");
+
+      const shiftRef = doc(db, "register_balances", expense.shift_id);
+      const shiftSnap = await tx.get(shiftRef);
+      if (!shiftSnap.exists()) throw new Error("SHIFT_NOT_FOUND");
+      if (shiftSnap.data().status !== "OPEN") throw new Error("SHIFT_CLOSED");
+
+      const delta = data.amount - expense.amount;
+
+      tx.update(expenseRef, {
+        amount: data.amount,
+        description: data.description,
+        updated_at: new Date(),
+      });
+
+      tx.update(shiftRef, {
+        total_expenses: increment(delta),
+        updated_at: new Date(),
+      });
+    });
+
+    return {
+      success: true,
+      data: { id },
+      message: API_MESSAGES.expenses.updated,
+    };
+  } catch (error: any) {
+    console.error(`Error en updateExpense para el ID ${id}:`, error);
+
+    if (error.message === "SHIFT_CLOSED") {
+      return {
+        success: false,
+        message: "No se puede editar un gasto de un turno ya cerrado",
+      };
+    }
+
+    return {
+      success: false,
+      message: API_MESSAGES.expenses.error,
+    };
+  }
+};
+
+/**
+ * Elimina (soft delete) un gasto y descuenta su monto del acumulador
+ * `total_expenses` del turno en la misma transacción.
+ * Bloqueado si el turno ya no está OPEN.
+ */
 export const softDeleteExpense = async (
   id: string,
 ): Promise<CustomApiResponse> => {
   try {
-    // 1. Obtenemos la referencia directa al documento en la colección
-    const shiftRef = doc(db, "expenses", id);
+    await runTransaction(db, async (tx) => {
+      const expenseRef = doc(db, "expenses", id);
+      const expenseSnap = await tx.get(expenseRef);
+      if (!expenseSnap.exists()) throw new Error("NOT_FOUND");
 
-    // 2. Ejecutamos un updateDoc para cambiar su estado de visibilidad
-    await updateDoc(shiftRef, {
-      is_deleted: true, // Flag central para filtrar en las consultas del frontend
-      deleted_at: new Date(), // Rastro de auditoría indispensable
+      const expense = expenseSnap.data();
+      if (expense.is_deleted) throw new Error("ALREADY_DELETED");
+
+      const shiftRef = doc(db, "register_balances", expense.shift_id);
+      const shiftSnap = await tx.get(shiftRef);
+      if (!shiftSnap.exists()) throw new Error("SHIFT_NOT_FOUND");
+      if (shiftSnap.data().status !== "OPEN") throw new Error("SHIFT_CLOSED");
+
+      tx.update(expenseRef, {
+        is_deleted: true,
+        deleted_at: new Date(),
+      });
+
+      tx.update(shiftRef, {
+        total_expenses: increment(-expense.amount),
+        updated_at: new Date(),
+      });
     });
 
     return {
@@ -76,6 +157,13 @@ export const softDeleteExpense = async (
     };
   } catch (error: any) {
     console.error(`Error al eliminar para el ID ${id}:`, error);
+
+    if (error.message === "SHIFT_CLOSED") {
+      return {
+        success: false,
+        message: "No se puede eliminar un gasto de un turno ya cerrado",
+      };
+    }
 
     return {
       success: false,
