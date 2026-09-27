@@ -12,6 +12,14 @@ param(
     [switch]$IncludeChecked
 )
 
+# Task Scheduler invokes via `powershell.exe -File ... -Cajas 01,02,03,04`
+# (no spaces). Windows splits argv on whitespace only, so -File's binder
+# gets "01,02,03,04" as ONE token and $Cajas ends up a single-element array
+# containing that whole string - PowerShell's own comma-splits-into-array
+# parsing only kicks in when a human types it at an interactive prompt.
+# Splitting here makes it work the same regardless of how it's invoked.
+$Cajas = $Cajas | ForEach-Object { $_ -split ',' } | Where-Object { $_ }
+
 $Root = $PSScriptRoot
 $Exe = Join-Path $Root 'bin\master-machine.exe'
 $Config = Join-Path $Root 'config.json'
