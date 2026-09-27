@@ -39,6 +39,8 @@ interface BranchSummary {
   // + total_expenses) for this branch/day — "how much did this branch
   // actually collect", independent of whether it reconciled.
   total_collected_cop: number;
+  // Sum of every CHECKED checkout's total_expenses for this branch/day.
+  total_expenses_cop: number;
 }
 
 export async function GET(req: NextRequest) {
@@ -87,6 +89,7 @@ export async function GET(req: NextRequest) {
         total_diff_cop: 0,
         discrepancies: [],
         total_collected_cop: 0,
+        total_expenses_cop: 0,
       };
 
       for (const doc of snapshot.docs) {
@@ -106,6 +109,7 @@ export async function GET(req: NextRequest) {
         const { diff, isBalanced, totalCop } = computeRegisterBalanceDiff(balance);
         summary.total_diff_cop += diff;
         summary.total_collected_cop += totalCop;
+        summary.total_expenses_cop += balance.total_expenses;
         if (isBalanced) {
           summary.matched += 1;
         } else {
