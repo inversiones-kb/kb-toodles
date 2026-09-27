@@ -479,7 +479,7 @@
     {
       "parameters": {
         "method": "GET",
-        "url": "={{ \"https://REPLACE_ME_COLON.tail1e64f4.ts.net/products?\" + ($json.isCode ? \"code=\" : \"q=\") + encodeURIComponent($json.term) }}",
+        "url": "={{ \"https://servidor-colon.tail1e64f4.ts.net/products?\" + ($json.isCode ? \"code=\" : \"q=\") + encodeURIComponent($json.term) }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}
