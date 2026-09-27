@@ -496,8 +496,8 @@
       "onError": "continueRegularOutput",
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_ME_STOCK_COLON",
-          "name": "KBToodles - Stock API Key (Colón)"
+          "id": "TrJohe1m6YnvSfc6",
+          "name": "KBToodles - Stock API Key"
         }
       }
     },
