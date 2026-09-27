@@ -72,11 +72,16 @@ type Product struct {
 // SUM(SALDOF) across its 3 saldoinv rows (CLI/INV/PRO) is -59+0+71=12.
 // saldoinv is ADN's own maintained balance snapshot, not a ledger scan -
 // full catalog (~10.8k rows) runs in ~1.7s.
+//
+// PRE_PRECIOCOP, not PRE_PRECIO: the latter is stored in a different base
+// currency and needs its own rate conversion (PRE_PRECIOUSD + a rate
+// table) to reach the real POS price. PRE_PRECIOCOP is ADN's own
+// precomputed real Supermarket price in COP - confirmed against the UI.
 const productsBaseQuery = `
 SELECT
   p.PDT_CODIGO AS codigo,
   p.PDT_DESCRIPCION AS nombre,
-  pr.PRE_PRECIO AS precio,
+  pr.PRE_PRECIOCOP AS precio,
   IFNULL(s.stock, 0) AS stock
 FROM ADN_PRODUCTOS p
 INNER JOIN ADN_PRECIOS pr ON pr.PRE_UGR_PDT_CODIGO = p.PDT_CODIGO
