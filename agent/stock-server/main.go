@@ -4,10 +4,9 @@
 // to ADN's local MariaDB, same DSN convention as agent/master-machine -
 // never write to that database (see project CLAUDE.md's hard rule).
 //
-// Real stock-query endpoints get added once the inventory report's SQL is
-// in hand; they will require the same shared-secret header pattern the
-// rest of this project already uses (see agent/master-machine and
-// src/app/api/ingest), never bare/open like /health is.
+// GET /products (code/name/price/stock, filterable) is queried directly
+// by n8n and the Next.js app over the Funnel URL - no Firestore sync for
+// this data, unlike the daily conciliation numbers.
 package main
 
 import (
@@ -40,7 +39,8 @@ func defaultConfigPath() string {
 }
 
 type Config struct {
-	DSN string `json:"dsn"`
+	DSN    string `json:"dsn"`
+	APIKey string `json:"api_key"`
 }
 
 func loadConfig(path string) (Config, error) {
@@ -55,7 +55,97 @@ func loadConfig(path string) (Config, error) {
 	if cfg.DSN == "" {
 		return cfg, fmt.Errorf("config %s: \"dsn\" is empty", path)
 	}
+	if cfg.APIKey == "" {
+		return cfg, fmt.Errorf("config %s: \"api_key\" is empty", path)
+	}
 	return cfg, nil
+}
+
+type Product struct {
+	Codigo string  `json:"codigo"`
+	Nombre string  `json:"nombre"`
+	Precio float64 `json:"precio"`
+	Stock  float64 `json:"stock"`
+}
+
+// Validated against ADN's own UI: product 010012 shows stock 12, and
+// SUM(SALDOF) across its 3 saldoinv rows (CLI/INV/PRO) is -59+0+71=12.
+// saldoinv is ADN's own maintained balance snapshot, not a ledger scan -
+// full catalog (~10.8k rows) runs in ~1.7s.
+const productsBaseQuery = `
+SELECT
+  p.PDT_CODIGO AS codigo,
+  p.PDT_DESCRIPCION AS nombre,
+  pr.PRE_PRECIO AS precio,
+  IFNULL(s.stock, 0) AS stock
+FROM ADN_PRODUCTOS p
+INNER JOIN ADN_PRECIOS pr ON pr.PRE_UGR_PDT_CODIGO = p.PDT_CODIGO
+LEFT JOIN (
+  SELECT CODIGO, SUM(SALDOF) AS stock
+  FROM saldoinv
+  GROUP BY CODIGO
+) s ON s.CODIGO = p.PDT_CODIGO
+WHERE p.PDT_ESTADO = "1"`
+
+func writeJSONError(w http.ResponseWriter, status int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(map[string]any{"success": false, "message": message})
+}
+
+func handleProducts(db *sql.DB, apiKey string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if key := r.Header.Get("x-ingest-key"); key == "" || key != apiKey {
+			writeJSONError(w, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
+		q := r.URL.Query()
+		query := productsBaseQuery
+		var args []any
+
+		if code := q.Get("code"); code != "" {
+			query += " AND p.PDT_CODIGO = ?"
+			args = append(args, code)
+		}
+		if name := q.Get("q"); name != "" {
+			query += " AND p.PDT_DESCRIPCION LIKE ?"
+			args = append(args, "%"+name+"%")
+		}
+		if maxStock := q.Get("max_stock"); maxStock != "" {
+			// References the "stock" SELECT-list alias - MariaDB allows this
+			// in HAVING, unlike WHERE.
+			query += " HAVING stock <= ?"
+			args = append(args, maxStock)
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+
+		rows, err := db.QueryContext(ctx, query, args...)
+		if err != nil {
+			writeJSONError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+		defer rows.Close()
+
+		products := []Product{}
+		for rows.Next() {
+			var p Product
+			if err := rows.Scan(&p.Codigo, &p.Nombre, &p.Precio, &p.Stock); err != nil {
+				writeJSONError(w, http.StatusInternalServerError, err.Error())
+				return
+			}
+			products = append(products, p)
+		}
+		if err := rows.Err(); err != nil {
+			writeJSONError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"success": true, "products": products})
+	}
 }
 
 func main() {
@@ -94,6 +184,8 @@ func main() {
 			"time":   time.Now().Format(time.RFC3339),
 		})
 	})
+
+	http.HandleFunc("/products", handleProducts(db, cfg.APIKey))
 
 	addr := "127.0.0.1:" + *port
 	log.Printf("stock-server listening on %s (localhost only)", addr)

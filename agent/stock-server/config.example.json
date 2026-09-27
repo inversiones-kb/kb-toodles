@@ -1,3 +1,4 @@
 {
-  "dsn": "user:password@tcp(127.0.0.1:3306)/adn?parseTime=true&loc=Local"
+  "dsn": "user:password@tcp(127.0.0.1:3306)/adn?parseTime=true&loc=Local",
+  "api_key": "shared secret, sent as the x-ingest-key header by n8n / the Next.js app"
 }
