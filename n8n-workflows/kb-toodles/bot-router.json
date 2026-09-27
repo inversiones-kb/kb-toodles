@@ -145,6 +145,29 @@
               },
               "renameOutput": true,
               "outputKey": "ayuda"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-stock",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/stock",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "stock"
             }
           ]
         },
@@ -318,6 +341,138 @@
         110,
         300
       ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// \"/stock 010012\" or \"/stock foami\" - everything after the command\n// is the search term. All ADN product codes seen so far are pure\n// digit strings, so that's the heuristic for code vs. name search.\nconst text = ($input.first().json.message && $input.first().json.message.text) || \"\";\nconst match = text.match(/^\\/stock\\s+(.+)$/i);\nconst term = match ? match[1].trim() : \"\";\nconst isCode = /^\\d+$/.test(term);\nreturn [{ json: { term, isCode } }];"
+      },
+      "id": "node-parse-stock",
+      "name": "Parse Stock Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        570,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-has-term",
+              "leftValue": "={{ $json.term }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-has-stock-term",
+      "name": "Has Stock Term?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        790,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ \"https://servidor-la-fria.tail1e64f4.ts.net/products?\" + ($json.isCode ? \"code=\" : \"q=\") + encodeURIComponent($json.term) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "node-http-stock",
+      "name": "Get Stock",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1010,
+        700
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "TrJohe1m6YnvSfc6",
+          "name": "KBToodles - Stock API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst products = (data && data.products) || [];\n\nfunction esc(v) {\n  return String(v).replace(/[_*\\[\\]()~`>#+=|{}.!-]/g, \"\\\\$&\");\n}\nfunction money(n) {\n  return esc(Number(n).toLocaleString(\"es-CO\", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));\n}\n\nconst MAX = 10;\nlet lines;\nif (!products.length) {\n  lines = [\"No se encontr\\u00f3 ning\\u00fan producto con ese c\\u00f3digo o nombre\\\\.\"];\n} else {\n  lines = products.slice(0, MAX).map((p) => {\n    return `*${esc(p.codigo)}* \\\\- ${esc(p.nombre)}\\n  \\ud83d\\udcb0 Precio: $${money(p.precio)}   \\ud83d\\udce6 Stock: ${esc(p.stock)}`;\n  });\n  if (products.length > MAX) {\n    lines.push(`_...y ${esc(products.length - MAX)} m\\u00e1s. Afina la b\\u00fasqueda para ver menos resultados._`);\n  }\n}\n\nreturn [{ json: { text: lines.join(\"\\n\\n\") } }];"
+      },
+      "id": "node-format-stock",
+      "name": "Format Stock Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1230,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "MarkdownV2"
+        }
+      },
+      "id": "node-reply-stock",
+      "name": "Reply Stock",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1450,
+        700
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "uzNbbuoJIIq0FtAO",
+          "name": "KBToodles - Telegram"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "Usa /stock seguido de un código o nombre\\. Ejemplo: /stock 010012",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "MarkdownV2"
+        }
+      },
+      "id": "node-reply-stock-usage",
+      "name": "Reply Stock Usage",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1010,
+        860
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "uzNbbuoJIIq0FtAO",
+          "name": "KBToodles - Telegram"
+        }
+      }
     }
   ],
   "connections": {
@@ -365,6 +520,13 @@
         [
           {
             "node": "Reply Help",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Stock Query",
             "type": "main",
             "index": 0
           }
@@ -421,6 +583,57 @@
           }
         ],
         []
+      ]
+    },
+    "Parse Stock Query": {
+      "main": [
+        [
+          {
+            "node": "Has Stock Term?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Stock Term?": {
+      "main": [
+        [
+          {
+            "node": "Get Stock",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Stock Usage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stock": {
+      "main": [
+        [
+          {
+            "node": "Format Stock Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Stock Reply": {
+      "main": [
+        [
+          {
+            "node": "Reply Stock",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     }
   }
