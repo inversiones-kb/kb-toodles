@@ -9,9 +9,13 @@ import { computeRegisterBalanceDiff } from "@/utils/reconciliation.utils";
 // process's own timezone.
 const LOCAL_OFFSET = "-04:00";
 
-function todayLocalDate(): string {
+// Same default as agent/run-daily.ps1: the business day that just closed,
+// not the still-open one. Venezuela has no DST, so 24h back in UTC is
+// always exactly one Caracas calendar day back, no edge cases.
+function yesterdayLocalDate(): string {
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Caracas" }).format(
-    new Date(),
+    yesterday,
   );
 }
 
@@ -44,7 +48,7 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const date = searchParams.get("date") || todayLocalDate();
+  const date = searchParams.get("date") || yesterdayLocalDate();
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return NextResponse.json(

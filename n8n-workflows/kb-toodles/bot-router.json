@@ -17,8 +17,8 @@
       "position": [0, 300],
       "credentials": {
         "telegramApi": {
-          "id": "REPLACE_ME",
-          "name": "Toodles Bot Token"
+          "id": "uzNbbuoJIIq0FtAO",
+          "name": "KBToodles - Telegram"
         }
       }
     },
@@ -37,8 +37,8 @@
                   {
                     "id": "cond-conciliacion",
                     "leftValue": "={{ $json.message.text }}",
-                    "rightValue": "/conciliacion",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "rightValue": "/cuadre",
+                    "operator": { "type": "string", "operation": "startsWith" }
                   }
                 ],
                 "combinator": "and"
@@ -140,8 +140,18 @@
     },
     {
       "parameters": {
+        "jsCode": "// Optional trailing date: \"/cuadre\" or \"/cuadre 2026-09-25\".\n// Anything else after the command (typo, garbage) is ignored, falling\n// back to the API's own default (yesterday's business day).\nconst text = ($input.first().json.message && $input.first().json.message.text) || \"\";\nconst match = text.match(/^\\/cuadre(?:\\s+(\\d{4}-\\d{2}-\\d{2}))?/);\nconst dateParam = (match && match[1]) || null;\nreturn [{ json: { dateParam } }];"
+      },
+      "id": "node-parse-date",
+      "name": "Parse Date Arg",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 60]
+    },
+    {
+      "parameters": {
         "method": "GET",
-        "url": "https://kb-toodles.vercel.app/api/reports/daily-conciliation",
+        "url": "={{ \"https://kb-toodles.vercel.app/api/reports/daily-conciliation\" + ($json.dateParam ? (\"?date=\" + $json.dateParam) : \"\") }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {}
@@ -150,23 +160,23 @@
       "name": "Get Daily Conciliation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460, 60],
+      "position": [680, 60],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "REPLACE_ME",
-          "name": "Reports API Key"
+          "id": "3NbEea5FB1IWmRGm",
+          "name": "KBToodles - Reports API Key"
         }
       }
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst branchNames = { \"la-fria\": \"La Fr\\u00eda\", \"colon\": \"Col\\u00f3n\" };\nconst lines = [`\\ud83d\\udcca Cuadre de caja - ${data.date}`, \"\"];\n\nfor (const key of Object.keys(data.branches || {})) {\n  const b = data.branches[key];\n  const name = branchNames[key] || key;\n  lines.push(`\\ud83c\\udfec ${name}`);\n  lines.push(`\\u2705 Cuadradas: ${b.matched}`);\n  lines.push(`\\u23f3 Pendientes: ${b.pending}`);\n  lines.push(`\\u26a0\\ufe0f Con diferencia: ${b.discrepancy}`);\n  if (b.total_diff_cop !== 0) {\n    lines.push(`Diferencia total: $${Number(b.total_diff_cop).toLocaleString(\"es-CO\")}`);\n  }\n  lines.push(\"\");\n}\n\nreturn [{ json: { text: lines.join(\"\\n\").trim() } }];"
+        "jsCode": "const data = $input.first().json;\nconst branchNames = { \"la-fria\": \"La Fr\\u00eda\", \"colon\": \"Col\\u00f3n\" };\n\n// MarkdownV2 requires escaping these outside intentional * bold * / _ italic _ spans.\nfunction esc(v) {\n  return String(v).replace(/[_*\\[\\]()~`>#+=|{}.!-]/g, \"\\\\$&\");\n}\n\nconst lines = [`\\ud83d\\udcca *Cuadre de caja* \\\\- ${esc(data.date)}`, \"\"];\n\nfor (const key of Object.keys(data.branches || {})) {\n  const b = data.branches[key];\n  const name = branchNames[key] || key;\n  lines.push(`\\ud83c\\udfec *${esc(name)}*`);\n  lines.push(`\\u2705 Cuadradas: ${esc(b.matched)}`);\n  lines.push(`\\u23f3 Pendientes: ${esc(b.pending)}`);\n  lines.push(`\\u26a0\\ufe0f Con diferencia: ${esc(b.discrepancy)}`);\n  if (b.total_diff_cop !== 0) {\n    lines.push(`Diferencia total: $${esc(Number(b.total_diff_cop).toLocaleString(\"es-CO\"))}`);\n  }\n  lines.push(\"\");\n}\n\nreturn [{ json: { text: lines.join(\"\\n\").trim() } }];"
       },
       "id": "node-format-conciliacion",
       "name": "Format Conciliation Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [680, 60]
+      "position": [900, 60]
     },
     {
       "parameters": {
@@ -174,17 +184,17 @@
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
         "text": "={{ $json.text }}",
-        "additionalFields": {}
+        "additionalFields": { "appendAttribution": false, "parse_mode": "MarkdownV2" }
       },
       "id": "node-reply-conciliacion",
       "name": "Reply Conciliation",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [900, 60],
+      "position": [1120, 60],
       "credentials": {
         "telegramApi": {
-          "id": "REPLACE_ME",
-          "name": "Toodles Bot Token"
+          "id": "uzNbbuoJIIq0FtAO",
+          "name": "KBToodles - Telegram"
         }
       }
     },
@@ -193,8 +203,8 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "\ud83d\udea7 Ese comando a\u00fan no est\u00e1 disponible. Pronto lo agregamos.",
-        "additionalFields": {}
+        "text": "\ud83d\udea7 Ese comando a\u00fan no est\u00e1 disponible\\. Pronto lo agregamos\\.",
+        "additionalFields": { "appendAttribution": false, "parse_mode": "MarkdownV2" }
       },
       "id": "node-reply-comingsoon",
       "name": "Reply Coming Soon",
@@ -203,8 +213,8 @@
       "position": [460, 380],
       "credentials": {
         "telegramApi": {
-          "id": "REPLACE_ME",
-          "name": "Toodles Bot Token"
+          "id": "uzNbbuoJIIq0FtAO",
+          "name": "KBToodles - Telegram"
         }
       }
     },
@@ -213,9 +223,10 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "\ud83e\udd16 *Comandos disponibles:*\n/conciliacion - Resumen de cuadre de caja del d\u00eda\n/bajo_stock - Pr\u00f3ximamente\n/empleados - Pr\u00f3ximamente\n/nomina - Pr\u00f3ximamente\n/ayuda - Este mensaje",
+        "text": "\ud83e\udd16 *Comandos disponibles:*\n/cuadre \\- Resumen de cuadre de caja del d\u00eda\n/bajo\\_stock \\- Pr\u00f3ximamente\n/empleados \\- Pr\u00f3ximamente\n/nomina \\- Pr\u00f3ximamente\n/ayuda \\- Este mensaje",
         "additionalFields": {
-          "parse_mode": "Markdown"
+          "appendAttribution": false,
+          "parse_mode": "MarkdownV2"
         }
       },
       "id": "node-reply-help",
@@ -225,8 +236,8 @@
       "position": [460, 560],
       "credentials": {
         "telegramApi": {
-          "id": "REPLACE_ME",
-          "name": "Toodles Bot Token"
+          "id": "uzNbbuoJIIq0FtAO",
+          "name": "KBToodles - Telegram"
         }
       }
     }
@@ -237,13 +248,16 @@
     },
     "Router": {
       "main": [
-        [{ "node": "Get Daily Conciliation", "type": "main", "index": 0 }],
+        [{ "node": "Parse Date Arg", "type": "main", "index": 0 }],
         [{ "node": "Reply Coming Soon", "type": "main", "index": 0 }],
         [{ "node": "Reply Coming Soon", "type": "main", "index": 0 }],
         [{ "node": "Reply Coming Soon", "type": "main", "index": 0 }],
         [{ "node": "Reply Help", "type": "main", "index": 0 }],
         [{ "node": "Reply Help", "type": "main", "index": 0 }]
       ]
+    },
+    "Parse Date Arg": {
+      "main": [[{ "node": "Get Daily Conciliation", "type": "main", "index": 0 }]]
     },
     "Get Daily Conciliation": {
       "main": [[{ "node": "Format Conciliation Message", "type": "main", "index": 0 }]]
