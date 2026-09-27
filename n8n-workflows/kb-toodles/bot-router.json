@@ -8,13 +8,18 @@
   "nodes": [
     {
       "parameters": {
-        "updates": ["message"]
+        "updates": [
+          "message"
+        ]
       },
       "id": "node-telegram-trigger",
       "name": "Telegram Trigger",
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1.1,
-      "position": [0, 300],
+      "position": [
+        0,
+        300
+      ],
       "credentials": {
         "telegramApi": {
           "id": "uzNbbuoJIIq0FtAO",
@@ -38,7 +43,10 @@
                     "id": "cond-conciliacion",
                     "leftValue": "={{ $json.message.text }}",
                     "rightValue": "/cuadre",
-                    "operator": { "type": "string", "operation": "startsWith" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -58,7 +66,10 @@
                     "id": "cond-bajostock",
                     "leftValue": "={{ $json.message.text }}",
                     "rightValue": "/bajo_stock",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -78,7 +89,10 @@
                     "id": "cond-empleados",
                     "leftValue": "={{ $json.message.text }}",
                     "rightValue": "/empleados",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -98,7 +112,10 @@
                     "id": "cond-nomina",
                     "leftValue": "={{ $json.message.text }}",
                     "rightValue": "/nomina",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -118,7 +135,10 @@
                     "id": "cond-ayuda",
                     "leftValue": "={{ $json.message.text }}",
                     "rightValue": "/ayuda",
-                    "operator": { "type": "string", "operation": "equals" }
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -136,7 +156,10 @@
       "name": "Router",
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
-      "position": [220, 300]
+      "position": [
+        220,
+        300
+      ]
     },
     {
       "parameters": {
@@ -146,7 +169,10 @@
       "name": "Parse Date Arg",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [460, 60]
+      "position": [
+        460,
+        60
+      ]
     },
     {
       "parameters": {
@@ -160,7 +186,10 @@
       "name": "Get Daily Conciliation",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [680, 60],
+      "position": [
+        680,
+        60
+      ],
       "credentials": {
         "httpHeaderAuth": {
           "id": "3NbEea5FB1IWmRGm",
@@ -170,13 +199,16 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst branchNames = { \"la-fria\": \"La Fr\\u00eda\", \"colon\": \"Col\\u00f3n\" };\n\n// MarkdownV2 requires escaping these outside intentional * bold * / _ italic _ spans.\nfunction esc(v) {\n  return String(v).replace(/[_*\\[\\]()~`>#+=|{}.!-]/g, \"\\\\$&\");\n}\n\nconst lines = [`\\ud83d\\udcca *Cuadre de caja* \\\\- ${esc(data.date)}`, \"\"];\n\nfor (const key of Object.keys(data.branches || {})) {\n  const b = data.branches[key];\n  const name = branchNames[key] || key;\n  lines.push(`\\ud83c\\udfec *${esc(name)}*`);\n  lines.push(`\\u2705 Cuadradas: ${esc(b.matched)}`);\n  lines.push(`\\u23f3 Pendientes: ${esc(b.pending)}`);\n  lines.push(`\\u26a0\\ufe0f Con diferencia: ${esc(b.discrepancy)}`);\n  if (b.total_diff_cop !== 0) {\n    lines.push(`Diferencia total: $${esc(Number(b.total_diff_cop).toLocaleString(\"es-CO\"))}`);\n  }\n  lines.push(\"\");\n}\n\nreturn [{ json: { text: lines.join(\"\\n\").trim() } }];"
+        "jsCode": "const data = $input.first().json;\nconst branchNames = { \"la-fria\": \"La Fría\", \"colon\": \"Colón\" };\n\n// MarkdownV2 requires escaping these outside intentional * bold * / _ italic _ spans.\nfunction esc(v) {\n  return String(v).replace(/[_*\\[\\]()~`>#+=|{}.!-]/g, \"\\\\$&\");\n}\n\nfunction money(n) {\n  return esc(Number(n).toLocaleString(\"es-CO\"));\n}\n\nconst lines = [`📊 *Cuadre de caja* \\\\- ${esc(data.date)}`, \"\"];\n\nfor (const key of Object.keys(data.branches || {})) {\n  const b = data.branches[key];\n  const name = branchNames[key] || key;\n  lines.push(`🏬 *${esc(name)}*`);\n  lines.push(`💰 Total recaudado: $${money(b.total_collected_cop)}`);\n  for (const d of b.discrepancies || []) {\n    lines.push(`↳ Caja ${esc(d.checkout_number)}: $${money(d.diff)}`);\n  }\n  if (b.total_diff_cop !== 0) {\n    lines.push(`Diferencia total: $${money(b.total_diff_cop)}`);\n  }\n  lines.push(\"\");\n}\n\nreturn [{ json: { text: lines.join(\"\\n\").trim() } }];"
       },
       "id": "node-format-conciliacion",
       "name": "Format Conciliation Message",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [900, 60]
+      "position": [
+        900,
+        60
+      ]
     },
     {
       "parameters": {
@@ -184,13 +216,19 @@
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
         "text": "={{ $json.text }}",
-        "additionalFields": { "appendAttribution": false, "parse_mode": "MarkdownV2" }
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "MarkdownV2"
+        }
       },
       "id": "node-reply-conciliacion",
       "name": "Reply Conciliation",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [1120, 60],
+      "position": [
+        1120,
+        60
+      ],
       "credentials": {
         "telegramApi": {
           "id": "uzNbbuoJIIq0FtAO",
@@ -203,14 +241,20 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "\ud83d\udea7 Ese comando a\u00fan no est\u00e1 disponible\\. Pronto lo agregamos\\.",
-        "additionalFields": { "appendAttribution": false, "parse_mode": "MarkdownV2" }
+        "text": "🚧 Ese comando aún no está disponible\\. Pronto lo agregamos\\.",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "MarkdownV2"
+        }
       },
       "id": "node-reply-comingsoon",
       "name": "Reply Coming Soon",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [460, 380],
+      "position": [
+        460,
+        380
+      ],
       "credentials": {
         "telegramApi": {
           "id": "uzNbbuoJIIq0FtAO",
@@ -223,7 +267,7 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
-        "text": "\ud83e\udd16 *Comandos disponibles:*\n/cuadre \\- Resumen de cuadre de caja del d\u00eda\n/bajo\\_stock \\- Pr\u00f3ximamente\n/empleados \\- Pr\u00f3ximamente\n/nomina \\- Pr\u00f3ximamente\n/ayuda \\- Este mensaje",
+        "text": "🤖 *Comandos disponibles:*\n/cuadre \\- Resumen de cuadre de caja del día\n/bajo\\_stock \\- Próximamente\n/empleados \\- Próximamente\n/nomina \\- Próximamente\n/ayuda \\- Este mensaje",
         "additionalFields": {
           "appendAttribution": false,
           "parse_mode": "MarkdownV2"
@@ -233,7 +277,10 @@
       "name": "Reply Help",
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
-      "position": [460, 560],
+      "position": [
+        460,
+        560
+      ],
       "credentials": {
         "telegramApi": {
           "id": "uzNbbuoJIIq0FtAO",
@@ -244,26 +291,94 @@
   ],
   "connections": {
     "Telegram Trigger": {
-      "main": [[{ "node": "Router", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Router": {
       "main": [
-        [{ "node": "Parse Date Arg", "type": "main", "index": 0 }],
-        [{ "node": "Reply Coming Soon", "type": "main", "index": 0 }],
-        [{ "node": "Reply Coming Soon", "type": "main", "index": 0 }],
-        [{ "node": "Reply Coming Soon", "type": "main", "index": 0 }],
-        [{ "node": "Reply Help", "type": "main", "index": 0 }],
-        [{ "node": "Reply Help", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Parse Date Arg",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Coming Soon",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Coming Soon",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Coming Soon",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Help",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Help",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Parse Date Arg": {
-      "main": [[{ "node": "Get Daily Conciliation", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Get Daily Conciliation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Get Daily Conciliation": {
-      "main": [[{ "node": "Format Conciliation Message", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Format Conciliation Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Format Conciliation Message": {
-      "main": [[{ "node": "Reply Conciliation", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Reply Conciliation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   }
 }

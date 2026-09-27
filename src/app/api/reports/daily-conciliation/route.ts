@@ -32,6 +32,13 @@ interface BranchSummary {
   discrepancy: number;
   pending: number;
   total_diff_cop: number;
+  // Just the CHECKED-and-unbalanced ones, so callers don't have to filter
+  // `checkouts` themselves to know which register(s) to flag.
+  discrepancies: { checkout_number: number; diff: number }[];
+  // Sum of every CHECKED checkout's cash-counted total (cop.cash + usd + bs
+  // + total_expenses) for this branch/day — "how much did this branch
+  // actually collect", independent of whether it reconciled.
+  total_collected_cop: number;
 }
 
 export async function GET(req: NextRequest) {
@@ -78,6 +85,8 @@ export async function GET(req: NextRequest) {
         discrepancy: 0,
         pending: 0,
         total_diff_cop: 0,
+        discrepancies: [],
+        total_collected_cop: 0,
       };
 
       for (const doc of snapshot.docs) {
@@ -94,10 +103,18 @@ export async function GET(req: NextRequest) {
           continue;
         }
 
-        const { diff, isBalanced } = computeRegisterBalanceDiff(balance);
+        const { diff, isBalanced, totalCop } = computeRegisterBalanceDiff(balance);
         summary.total_diff_cop += diff;
-        if (isBalanced) summary.matched += 1;
-        else summary.discrepancy += 1;
+        summary.total_collected_cop += totalCop;
+        if (isBalanced) {
+          summary.matched += 1;
+        } else {
+          summary.discrepancy += 1;
+          summary.discrepancies.push({
+            checkout_number: balance.checkout_number,
+            diff,
+          });
+        }
 
         summary.checkouts.push({
           checkout_number: balance.checkout_number,
@@ -108,6 +125,7 @@ export async function GET(req: NextRequest) {
       }
 
       summary.checkouts.sort((a, b) => a.checkout_number - b.checkout_number);
+      summary.discrepancies.sort((a, b) => a.checkout_number - b.checkout_number);
       branches[branch] = summary;
     }
 

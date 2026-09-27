@@ -1,8 +1,8 @@
 import { RegisterBalance } from "@/validations/registerBalance.validations";
 
-// 100 COP grace interval — small rounding differences between the
+// 3.000 COP grace interval — small rounding differences between the
 // cashier's count and ADN's system total don't count as a real mismatch.
-export const RECONCILIATION_GRACE_COP = 100;
+export const RECONCILIATION_GRACE_COP = 3000;
 
 /**
  * Cash-counted total vs. what ADN's system reported for the same shift.
