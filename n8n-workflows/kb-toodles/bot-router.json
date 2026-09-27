@@ -237,7 +237,7 @@
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "={{ $json.text }}",
         "additionalFields": {
           "appendAttribution": false,
@@ -263,7 +263,7 @@
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "🚧 Ese comando aún no está disponible\\. Pronto lo agregamos\\.",
         "additionalFields": {
           "appendAttribution": false,
@@ -289,7 +289,7 @@
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "🤖 *Comandos disponibles:*\n/cuadre \\- Resumen de cuadre de caja del día\n/consulta \\- Consultar precio y stock de un producto\n/bajo\\_stock \\- Próximamente\n/empleados \\- Próximamente\n/nomina \\- Próximamente\n/ayuda \\- Este mensaje",
         "additionalFields": {
           "appendAttribution": false,
@@ -428,7 +428,7 @@
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "={{ $json.text }}",
         "additionalFields": {
           "appendAttribution": false,
@@ -454,7 +454,7 @@
       "parameters": {
         "resource": "message",
         "operation": "sendMessage",
-        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
         "text": "Usa /consulta seguido de un código o nombre\\. Ejemplo: /consulta 010012",
         "additionalFields": {
           "appendAttribution": false,
