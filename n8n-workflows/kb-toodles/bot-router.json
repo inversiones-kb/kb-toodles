@@ -1,0 +1,255 @@
+{
+  "name": "[kb-toodles] Bot Router",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"]
+      },
+      "id": "node-telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [0, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Toodles Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-conciliacion",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/conciliacion",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "conciliacion"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-bajostock",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/bajo_stock",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "bajo_stock"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-empleados",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/empleados",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "empleados"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-nomina",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/nomina",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "nomina"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "cond-ayuda",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/ayuda",
+                    "operator": { "type": "string", "operation": "equals" }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ayuda"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "node-router-switch",
+      "name": "Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://kb-toodles.vercel.app/api/reports/daily-conciliation",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "node-http-conciliacion",
+      "name": "Get Daily Conciliation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 60],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "Reports API Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst branchNames = { \"la-fria\": \"La Fr\\u00eda\", \"colon\": \"Col\\u00f3n\" };\nconst lines = [`\\ud83d\\udcca Cuadre de caja - ${data.date}`, \"\"];\n\nfor (const key of Object.keys(data.branches || {})) {\n  const b = data.branches[key];\n  const name = branchNames[key] || key;\n  lines.push(`\\ud83c\\udfec ${name}`);\n  lines.push(`\\u2705 Cuadradas: ${b.matched}`);\n  lines.push(`\\u23f3 Pendientes: ${b.pending}`);\n  lines.push(`\\u26a0\\ufe0f Con diferencia: ${b.discrepancy}`);\n  if (b.total_diff_cop !== 0) {\n    lines.push(`Diferencia total: $${Number(b.total_diff_cop).toLocaleString(\"es-CO\")}`);\n  }\n  lines.push(\"\");\n}\n\nreturn [{ json: { text: lines.join(\"\\n\").trim() } }];"
+      },
+      "id": "node-format-conciliacion",
+      "name": "Format Conciliation Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 60]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "id": "node-reply-conciliacion",
+      "name": "Reply Conciliation",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [900, 60],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Toodles Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "\ud83d\udea7 Ese comando a\u00fan no est\u00e1 disponible. Pronto lo agregamos.",
+        "additionalFields": {}
+      },
+      "id": "node-reply-comingsoon",
+      "name": "Reply Coming Soon",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [460, 380],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Toodles Bot Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "\ud83e\udd16 *Comandos disponibles:*\n/conciliacion - Resumen de cuadre de caja del d\u00eda\n/bajo_stock - Pr\u00f3ximamente\n/empleados - Pr\u00f3ximamente\n/nomina - Pr\u00f3ximamente\n/ayuda - Este mensaje",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "node-reply-help",
+      "name": "Reply Help",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [460, 560],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_ME",
+          "name": "Toodles Bot Token"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "Router", "type": "main", "index": 0 }]]
+    },
+    "Router": {
+      "main": [
+        [{ "node": "Get Daily Conciliation", "type": "main", "index": 0 }],
+        [{ "node": "Reply Coming Soon", "type": "main", "index": 0 }],
+        [{ "node": "Reply Coming Soon", "type": "main", "index": 0 }],
+        [{ "node": "Reply Coming Soon", "type": "main", "index": 0 }],
+        [{ "node": "Reply Help", "type": "main", "index": 0 }],
+        [{ "node": "Reply Help", "type": "main", "index": 0 }]
+      ]
+    },
+    "Get Daily Conciliation": {
+      "main": [[{ "node": "Format Conciliation Message", "type": "main", "index": 0 }]]
+    },
+    "Format Conciliation Message": {
+      "main": [[{ "node": "Reply Conciliation", "type": "main", "index": 0 }]]
+    }
+  }
+}

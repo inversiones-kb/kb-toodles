@@ -41,6 +41,7 @@ import BranchLink from "@/components/general/BranchLink";
 import { useParams } from "next/navigation";
 import { BUSINESS_BRANCH_MAP } from "@/types/businessBranch.types";
 import { BaseTableProps } from "@/components/ui/table/BaseTable";
+import { computeRegisterBalanceDiff } from "@/utils/reconciliation.utils";
 
 export default function RegisterBalancesPage() {
   const branch = useParams().branch as keyof typeof BUSINESS_BRANCH_MAP;
@@ -151,10 +152,7 @@ export default function RegisterBalancesPage() {
         if (item.status !== "CHECKED") return "--";
         if (!item.money) return "--";
 
-        const totalCop =
-          item.money.cop.cash + usd1 + usd2 + usd3 + item.total_expenses;
-        const diff = totalCop - item.money.cop.system;
-        const isBalanced = Math.abs(diff) <= 100; // 100 cop grace interval
+        const { diff, isBalanced } = computeRegisterBalanceDiff(item);
 
         return (
           <div className="flex flex-col gap-0.5 items-center">

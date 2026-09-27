@@ -1,4 +1,5 @@
 import { RegisterBalance } from "@/validations/registerBalance.validations";
+import { computeRegisterBalanceDiff } from "@/utils/reconciliation.utils";
 
 export const generateSalesChartData = (balances: RegisterBalance[]) => {
   // 2. Agrupamos y sumamos por día usando reduce
@@ -115,15 +116,7 @@ export const generateDiffSalesChartData = (balances: RegisterBalance[]) => {
 
       // Sumamos el total del registro al día correspondiente
 
-      const usd1 = balance.money.usd.cash1 * balance.money.usd.rate1;
-      const usd2 = balance.money.usd.cash2 * balance.money.usd.rate2;
-      const usd3 = balance.money.usd.cash3 * balance.money.usd.rate3;
-
-      const total =
-        balance.money.cop.cash + balance.total_expenses + usd1 + usd2 + usd3;
-
-      const diff = total - balance.money.cop.system;
-      const isBalanced = Math.abs(diff) <= 100; // 100 cop grace interval
+      const { diff } = computeRegisterBalanceDiff(balance);
 
       acc[dayLabel] += diff;
 
