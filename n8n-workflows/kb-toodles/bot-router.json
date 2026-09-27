@@ -157,7 +157,7 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        220,
+        330,
         300
       ]
     },
@@ -170,7 +170,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        460,
+        570,
         60
       ]
     },
@@ -187,7 +187,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        680,
+        790,
         60
       ],
       "credentials": {
@@ -206,7 +206,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        900,
+        1010,
         60
       ]
     },
@@ -226,7 +226,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1120,
+        1230,
         60
       ],
       "credentials": {
@@ -252,7 +252,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        460,
+        570,
         380
       ],
       "credentials": {
@@ -278,7 +278,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        460,
+        570,
         560
       ],
       "credentials": {
@@ -287,6 +287,37 @@
           "name": "KBToodles - Telegram"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-allowed",
+              "leftValue": "={{ [\"1040562475\"].includes(String($json.message.from.id)) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "node-access-check",
+      "name": "Access Check",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        110,
+        300
+      ]
     }
   ],
   "connections": {
@@ -294,7 +325,7 @@
       "main": [
         [
           {
-            "node": "Router",
+            "node": "Access Check",
             "type": "main",
             "index": 0
           }
@@ -378,6 +409,18 @@
             "index": 0
           }
         ]
+      ]
+    },
+    "Access Check": {
+      "main": [
+        [
+          {
+            "node": "Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     }
   }

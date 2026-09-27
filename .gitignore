@@ -44,6 +44,8 @@ next-env.d.ts
 agent/bin/
 agent/config.json
 agent/*.db
+agent/stock-server/config.json
+agent/stock-server/bin/
 
 # HyperFrames video projects (large media, not source)
 videos/
