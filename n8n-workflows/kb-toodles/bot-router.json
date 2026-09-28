@@ -222,7 +222,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const data = $input.first().json;\nconst branchNames = { \"la-fria\": \"La Fría\", \"colon\": \"Colón\" };\n\n// MarkdownV2 requires escaping these outside intentional * bold * / _ italic _ spans.\nfunction esc(v) {\n  return String(v).replace(/[_*\\[\\]()~`>#+=|{}.!-]/g, \"\\\\$&\");\n}\n\n// COP has no cents in practice; force whole pesos so floating-point\n// remainders (e.g. from usd cash * rate) don't leak in as \",28\".\nfunction money(n) {\n  return esc(Number(n).toLocaleString(\"es-CO\", { maximumFractionDigits: 0 }));\n}\n\nconst lines = [`📊 *Cuadre de caja* \\\\- ${esc(data.date)}`, \"\"];\n\nfor (const key of Object.keys(data.branches || {})) {\n  const b = data.branches[key];\n  const name = branchNames[key] || key;\n  lines.push(`🏢 *${esc(name)}*`);\n  lines.push(`💰 Total recaudado: $${money(b.total_collected_cop)}`);\n  lines.push(`💸 Total gastos: $${money(b.total_expenses_cop)}`);\n  lines.push(`⚠️ Total diferencia: $${money(b.total_diff_cop)}`);\n  for (const d of b.discrepancies || []) {\n    lines.push(`  ↳ Caja ${esc(d.checkout_number)}: $${money(d.diff)}`);\n  }\n  lines.push(\"\");\n}\n\nreturn [{ json: { text: lines.join(\"\\n\").trim() } }];"
+        "jsCode": "const data = $input.first().json;\nconst branchNames = { \"la-fria\": \"La Fría\", \"colon\": \"Colón\" };\n\n// HTML parse_mode only reserves &, <, > - not the 18-character MarkdownV2\n// set, so dynamic ADN data (names, dates, amounts) can't accidentally\n// break the message the way an unescaped '.', '-', etc. would.\nfunction esc(v) {\n  return String(v).replace(/[&<>]/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\" }[c]));\n}\n\nfunction money(n) {\n  return esc(Number(n).toLocaleString(\"es-CO\", { maximumFractionDigits: 0 }));\n}\n\nconst lines = [`📊 <b>Cuadre de caja</b> - ${esc(data.date)}`, \"\"];\n\nfor (const key of Object.keys(data.branches || {})) {\n  const b = data.branches[key];\n  const name = branchNames[key] || key;\n  lines.push(`🏢 <b>${esc(name)}</b>`);\n  lines.push(`💰 Total recaudado: $${money(b.total_collected_cop)}`);\n  lines.push(`💸 Total gastos: $${money(b.total_expenses_cop)}`);\n  lines.push(`⚠️ Total diferencia: $${money(b.total_diff_cop)}`);\n  for (const d of b.discrepancies || []) {\n    lines.push(`  ↳ Caja ${esc(d.checkout_number)}: $${money(d.diff)}`);\n  }\n  lines.push(\"\");\n}\n\nreturn [{ json: { text: lines.join(\"\\n\").trim() } }];"
       },
       "id": "node-format-conciliacion",
       "name": "Format Conciliation Message",
@@ -241,7 +241,7 @@
         "text": "={{ $json.text }}",
         "additionalFields": {
           "appendAttribution": false,
-          "parse_mode": "MarkdownV2"
+          "parse_mode": "HTML"
         }
       },
       "id": "node-reply-conciliacion",
@@ -264,10 +264,10 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
-        "text": "🚧 Ese comando aún no está disponible\\. Pronto lo agregamos\\.",
+        "text": "🚧 Ese comando aún no está disponible. Pronto lo agregamos.",
         "additionalFields": {
           "appendAttribution": false,
-          "parse_mode": "MarkdownV2"
+          "parse_mode": "HTML"
         }
       },
       "id": "node-reply-comingsoon",
@@ -290,10 +290,10 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
-        "text": "🤖 *Comandos disponibles:*\n/cuadre \\- Resumen de cuadre de caja del día\n/consulta \\- Consultar precio y stock de un producto\n/bajo\\_stock \\- Próximamente\n/empleados \\- Próximamente\n/nomina \\- Próximamente\n/ayuda \\- Este mensaje",
+        "text": "🤖 <b>Comandos disponibles:</b>\n/cuadre - Resumen de cuadre de caja del día\n/consulta - Consultar precio y stock de un producto\n/bajo_stock - Próximamente\n/empleados - Próximamente\n/nomina - Próximamente\n/ayuda - Este mensaje",
         "additionalFields": {
           "appendAttribution": false,
-          "parse_mode": "MarkdownV2"
+          "parse_mode": "HTML"
         }
       },
       "id": "node-reply-help",
@@ -413,7 +413,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const branchNames = { \"la-fria\": \"La Fr\\u00eda\", \"colon\": \"Col\\u00f3n\" };\n\nfunction esc(v) {\n  return String(v).replace(/[_*\\[\\]()~`>#+=|{}.!-]/g, \"\\\\$&\");\n}\nfunction money(n) {\n  return esc(Number(n).toLocaleString(\"es-CO\", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));\n}\n\nconst MAX_PER_BRANCH = 5;\nconst results = $input.all().map((item) => item.json);\n\nconst lines = [];\nfor (const r of results) {\n  const name = branchNames[r.branch] || r.branch;\n  lines.push(`\\ud83c\\udfe2 *${esc(name)}*`);\n\n  if (!r.available) {\n    lines.push(\"  \\u26a0\\ufe0f No disponible en este momento\\\\.\");\n    lines.push(\"\");\n    continue;\n  }\n\n  const products = r.products || [];\n  if (!products.length) {\n    lines.push(\"  No se encontr\\u00f3 ning\\u00fan producto\\\\.\");\n  } else {\n    products.slice(0, MAX_PER_BRANCH).forEach((p) => {\n      lines.push(`  *${esc(p.codigo)}* \\\\- ${esc(p.nombre)}`);\n      lines.push(`    \\ud83d\\udcb0 $${money(p.precio)}   \\ud83d\\udce6 Stock: ${esc(p.stock)}`);\n    });\n    if (products.length > MAX_PER_BRANCH) {\n      lines.push(`  _...y ${esc(products.length - MAX_PER_BRANCH)} m\\u00e1s._`);\n    }\n  }\n  lines.push(\"\");\n}\n\nreturn [{ json: { text: lines.join(\"\\n\").trim() } }];"
+        "jsCode": "const branchNames = { \"la-fria\": \"La Fría\", \"colon\": \"Colón\" };\n\nfunction esc(v) {\n  return String(v).replace(/[&<>]/g, (c) => ({ \"&\": \"&amp;\", \"<\": \"&lt;\", \">\": \"&gt;\" }[c]));\n}\nfunction money(n) {\n  return esc(Number(n).toLocaleString(\"es-CO\", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));\n}\n\nconst MAX_PER_BRANCH = 5;\nconst results = $input.all().map((item) => item.json);\n\nconst lines = [];\nfor (const r of results) {\n  const name = branchNames[r.branch] || r.branch;\n  lines.push(`🏢 <b>${esc(name)}</b>`);\n\n  if (!r.available) {\n    lines.push(\"  ⚠️ No disponible en este momento.\");\n    lines.push(\"\");\n    continue;\n  }\n\n  const products = r.products || [];\n  if (!products.length) {\n    lines.push(\"  No se encontró ningún producto.\");\n  } else {\n    products.slice(0, MAX_PER_BRANCH).forEach((p) => {\n      lines.push(`  <b>${esc(p.codigo)}</b> - ${esc(p.nombre)}`);\n      lines.push(`    💰 $${money(p.precio)}   📦 Stock: ${esc(p.stock)}`);\n    });\n    if (products.length > MAX_PER_BRANCH) {\n      lines.push(`  <i>...y ${esc(products.length - MAX_PER_BRANCH)} más.</i>`);\n    }\n  }\n  lines.push(\"\");\n}\n\nreturn [{ json: { text: lines.join(\"\\n\").trim() } }];"
       },
       "id": "node-format-stock",
       "name": "Format Stock Reply",
@@ -432,7 +432,7 @@
         "text": "={{ $json.text }}",
         "additionalFields": {
           "appendAttribution": false,
-          "parse_mode": "MarkdownV2"
+          "parse_mode": "HTML"
         }
       },
       "id": "node-reply-stock",
@@ -455,10 +455,10 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
-        "text": "Usa /consulta seguido de un código o nombre\\. Ejemplo: /consulta 010012",
+        "text": "Usa /consulta seguido de un código o nombre. Ejemplo: /consulta 010012",
         "additionalFields": {
           "appendAttribution": false,
-          "parse_mode": "MarkdownV2"
+          "parse_mode": "HTML"
         }
       },
       "id": "node-reply-stock-usage",
