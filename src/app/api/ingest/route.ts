@@ -14,7 +14,7 @@ interface IngestPayload {
   allow_checked?: boolean;
   money: {
     cop: { system: number };
-    bs: { pos_system: number; mobile_system: number; cash_system?: number };
+    bs: { pos_system: number; mobile_system: number; cash_system?: number; cash_cop_rate?: number };
   };
 }
 
@@ -29,7 +29,9 @@ function isValidPayload(body: unknown): body is IngestPayload {
     typeof p.money?.bs?.pos_system === "number" &&
     typeof p.money?.bs?.mobile_system === "number" &&
     (p.money.bs.cash_system === undefined ||
-      typeof p.money.bs.cash_system === "number")
+      typeof p.money.bs.cash_system === "number") &&
+    (p.money.bs.cash_cop_rate === undefined ||
+      typeof p.money.bs.cash_cop_rate === "number")
   );
 }
 
@@ -80,7 +82,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ADN's own COP-per-Bs rate is only a default: never overwrite a rate an
+    // admin already set on this doc.
+    const rate = money.bs.cash_cop_rate ?? 0;
+    const hasRate = Boolean(doc.data()?.money?.bs?.cash_cop_rate);
+    const defaultRate =
+      (money.bs.cash_system ?? 0) > 0 && rate > 0 && !hasRate
+        ? { "money.bs.cash_cop_rate": rate }
+        : {};
+
     await docRef.update({
+      ...defaultRate,
       "money.cop.system": money.cop.system,
       "money.bs.pos_system": money.bs.pos_system,
       "money.bs.mobile_system": money.bs.mobile_system,

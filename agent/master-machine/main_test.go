@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestLoadQueries(t *testing.T) {
 	queries, order, err := loadQueries("queries/cash_report.sql")
@@ -77,4 +80,16 @@ func placeholderCount(sql string) int {
 		}
 	}
 	return n
+}
+
+func TestCopPerBs(t *testing.T) {
+	// Values from the 2026-09-17 La Fria ResumenT1: 1462896 COP / 4302635.29 "other currency".
+	var s Summary
+	monto, otra := 1462896.0, 4302635.29
+	if monto > 0 {
+		s.CopPerBs = math.Round(otra/monto*1e4) / 1e4
+	}
+	if s.CopPerBs != 2.9412 {
+		t.Fatalf("CopPerBs = %v, want 2.9412", s.CopPerBs)
+	}
 }

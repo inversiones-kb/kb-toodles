@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -127,6 +128,16 @@ type Summary struct {
 	// Bs cash is never legitimate here (only COP/USD cash is received), so any
 	// amount is a cashier misfiling; the app flags it and can fold it into COP.
 	BsCashSystem float64 // money.bs.cash_system
+
+	// ADN's own COP-per-Bs rate for the shift, derived from the BANCO EFECTIVO
+	// PESOS row (ADN prints MONTO / tasaCOP as its "other currency" column).
+	// Used as the default for money.bs.cash_cop_rate when Bs cash shows up.
+	CopPerBs float64
+
+	// Rows ResumenT1/T2 returned for the shift. 0 means ADN had nothing for
+	// this window (wrong caja code, wrong date, window mismatch), so posting
+	// would overwrite good system values with zeros.
+	RowCount int
 }
 
 // applyRow folds one ResumenT1/ResumenT2 row (NOMBRE, MONTO) into s. Rows
@@ -176,7 +187,11 @@ func scanSummaryRows(rows *sql.Rows, s *Summary) error {
 		if err := rows.Scan(&cantidad, &montoOtraMoneda, &monto, &nombre, &tipotrans); err != nil {
 			return err
 		}
+		s.RowCount++
 		applyRow(s, nombre, monto)
+		if nombre == nombreBancoEfectivoPesos && monto > 0 {
+			s.CopPerBs = math.Round(montoOtraMoneda/monto*1e4) / 1e4
+		}
 	}
 	return rows.Err()
 }
@@ -289,6 +304,7 @@ type ingestPayload struct {
 			PosSystem    float64 `json:"pos_system"`
 			MobileSystem float64 `json:"mobile_system"`
 			CashSystem   float64 `json:"cash_system"`
+			CashCopRate  float64 `json:"cash_cop_rate"`
 		} `json:"bs"`
 	} `json:"money"`
 }
@@ -301,6 +317,7 @@ func newIngestPayload(docID string, includeChecked bool, s Summary) ingestPayloa
 	p.Money.Bs.PosSystem = s.POSSystem
 	p.Money.Bs.MobileSystem = s.MobileSystem
 	p.Money.Bs.CashSystem = s.BsCashSystem
+	p.Money.Bs.CashCopRate = s.CopPerBs
 	return p
 }
 
@@ -392,7 +409,10 @@ func run(cfg Config, queriesPath, date, caja string, doIngest, includeChecked bo
 			},
 		}
 
-		if doIngest {
+		if doIngest && summary.RowCount == 0 {
+			fmt.Fprintf(out, "SKIPPED shift %s: ADN returned no rows for caja=%s date=%s window=%s..%s - not posting zeros\n",
+				shift.ID, caja, date, shift.StartTime, shift.EndTime)
+		} else if doIngest {
 			if err := postSummary(cfg, newIngestPayload(shift.ID, includeChecked, summary)); err != nil {
 				return fmt.Errorf("ingest for shift %s: %w", shift.ID, err)
 			}
