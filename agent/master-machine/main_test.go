@@ -45,16 +45,17 @@ func TestApplyRow(t *testing.T) {
 	applyRow(&s, "BANCO EFECTIVO PESOS", 417730.00)
 	applyRow(&s, "BANESCO", 3092.87)
 	applyRow(&s, "PUNTO DE VENTA", 183690.29)
+	applyRow(&s, "EFECTIVO BOLIVARES", 83891.15)
 	applyRow(&s, "SOME OTHER BANK", 999) // must be ignored
 
-	want := Summary{POSSystem: 183690.29, MobileSystem: 3092.87, CopSystem: 417730.00}
+	want := Summary{POSSystem: 183690.29, MobileSystem: 3092.87, CopSystem: 417730.00, BsCashSystem: 83891.15}
 	if s != want {
 		t.Fatalf("got %+v, want %+v", s, want)
 	}
 }
 
 func TestNewIngestPayload(t *testing.T) {
-	s := Summary{POSSystem: 183690.29, MobileSystem: 3092.87, CopSystem: 417730.00}
+	s := Summary{POSSystem: 183690.29, MobileSystem: 3092.87, CopSystem: 417730.00, BsCashSystem: 83891.15}
 
 	p := newIngestPayload("Et7dIRHDE0ZBKJPRa1GP", true, s)
 	if p.DocID != "Et7dIRHDE0ZBKJPRa1GP" {
@@ -63,7 +64,7 @@ func TestNewIngestPayload(t *testing.T) {
 	if !p.AllowChecked {
 		t.Error("AllowChecked = false, want true (was passed includeChecked=true)")
 	}
-	if p.Money.Bs.PosSystem != s.POSSystem || p.Money.Bs.MobileSystem != s.MobileSystem || p.Money.Cop.System != s.CopSystem {
+	if p.Money.Bs.PosSystem != s.POSSystem || p.Money.Bs.MobileSystem != s.MobileSystem || p.Money.Cop.System != s.CopSystem || p.Money.Bs.CashSystem != s.BsCashSystem {
 		t.Errorf("payload money = %+v, want it to match summary %+v", p.Money, s)
 	}
 }

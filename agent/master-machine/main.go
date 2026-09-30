@@ -115,6 +115,7 @@ const (
 	nombrePuntoDeVenta       = "PUNTO DE VENTA"
 	nombreBanesco            = "BANESCO"
 	nombreBancoEfectivoPesos = "BANCO EFECTIVO PESOS"
+	nombreEfectivoBolivares  = "EFECTIVO BOLIVARES"
 )
 
 // Summary holds the three overview-page totals the app persists, as plain
@@ -123,6 +124,9 @@ type Summary struct {
 	POSSystem    float64 // money.bs.pos_system
 	MobileSystem float64 // money.bs.mobile_system
 	CopSystem    float64 // money.cop.system
+	// Bs cash is never legitimate here (only COP/USD cash is received), so any
+	// amount is a cashier misfiling; the app flags it and can fold it into COP.
+	BsCashSystem float64 // money.bs.cash_system
 }
 
 // applyRow folds one ResumenT1/ResumenT2 row (NOMBRE, MONTO) into s. Rows
@@ -135,6 +139,8 @@ func applyRow(s *Summary, nombre string, monto float64) {
 		s.MobileSystem = monto
 	case nombreBancoEfectivoPesos:
 		s.CopSystem = monto
+	case nombreEfectivoBolivares:
+		s.BsCashSystem = monto
 	}
 }
 
@@ -282,6 +288,7 @@ type ingestPayload struct {
 		Bs struct {
 			PosSystem    float64 `json:"pos_system"`
 			MobileSystem float64 `json:"mobile_system"`
+			CashSystem   float64 `json:"cash_system"`
 		} `json:"bs"`
 	} `json:"money"`
 }
@@ -293,6 +300,7 @@ func newIngestPayload(docID string, includeChecked bool, s Summary) ingestPayloa
 	p.Money.Cop.System = s.CopSystem
 	p.Money.Bs.PosSystem = s.POSSystem
 	p.Money.Bs.MobileSystem = s.MobileSystem
+	p.Money.Bs.CashSystem = s.BsCashSystem
 	return p
 }
 

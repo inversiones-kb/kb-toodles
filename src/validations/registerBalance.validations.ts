@@ -62,6 +62,13 @@ export const createRegisterBalanceSchema = z.object({
 
       mobile: z.coerce.number().min(0, "El valor mínimo es 0"),
       mobile_system: z.coerce.number().min(0, "El valor mínimo es 0"),
+
+      // Bs cash is never legitimate (only COP/USD cash is received): any amount
+      // is a cashier misfiling of COP cash. `cash_system` is written by ingest;
+      // `cash_cop_rate` (COP per Bs) is an admin-set, per-doc rate used to fold
+      // it back into money.cop.system when reconciling.
+      cash_system: z.coerce.number().min(0).optional(),
+      cash_cop_rate: z.coerce.number().min(0).optional(),
     }),
   }),
 

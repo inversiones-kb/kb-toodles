@@ -16,7 +16,11 @@ export function computeRegisterBalanceDiff(balance: RegisterBalance) {
 
   const totalCop =
     balance.money.cop.cash + usd1 + usd2 + usd3 + balance.total_expenses;
-  const diff = totalCop - balance.money.cop.system;
+  // Cashiers sometimes ring COP cash under "EFECTIVO BOLIVARES"; the admin
+  // sets a per-doc COP-per-Bs rate to fold that amount back into the COP side.
+  const misfiledCop =
+    (balance.money.bs.cash_system ?? 0) * (balance.money.bs.cash_cop_rate ?? 0);
+  const diff = totalCop - (balance.money.cop.system + misfiledCop);
 
   return {
     totalCop,

@@ -14,7 +14,7 @@ interface IngestPayload {
   allow_checked?: boolean;
   money: {
     cop: { system: number };
-    bs: { pos_system: number; mobile_system: number };
+    bs: { pos_system: number; mobile_system: number; cash_system?: number };
   };
 }
 
@@ -27,7 +27,9 @@ function isValidPayload(body: unknown): body is IngestPayload {
     (p.allow_checked === undefined || typeof p.allow_checked === "boolean") &&
     typeof p.money?.cop?.system === "number" &&
     typeof p.money?.bs?.pos_system === "number" &&
-    typeof p.money?.bs?.mobile_system === "number"
+    typeof p.money?.bs?.mobile_system === "number" &&
+    (p.money.bs.cash_system === undefined ||
+      typeof p.money.bs.cash_system === "number")
   );
 }
 
@@ -82,9 +84,36 @@ export async function POST(req: NextRequest) {
       "money.cop.system": money.cop.system,
       "money.bs.pos_system": money.bs.pos_system,
       "money.bs.mobile_system": money.bs.mobile_system,
+      "money.bs.cash_system": money.bs.cash_system ?? 0,
       status: "CHECKED",
       updated_at: new Date(),
     });
+
+    // Guard: Bs cash is never legitimate, so any amount is a cashier mistake.
+    // Fired here (not on a timer) so n8n always sees the just-ingested values.
+    const cashBs = money.bs.cash_system ?? 0;
+    if (cashBs > 0 && process.env.N8N_BS_CASH_WEBHOOK_URL) {
+      const d = doc.data()!;
+      const closed = d.closed_at?.toDate?.() as Date | undefined;
+      try {
+        await fetch(process.env.N8N_BS_CASH_WEBHOOK_URL, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            branch: d.branch,
+            checkout_number: d.checkout_number,
+            cashier: `${d.user_snapshot?.name ?? ""} ${d.user_snapshot?.last_name ?? ""}`.trim(),
+            date: closed?.toISOString() ?? null,
+            cash_bs: cashBs,
+            doc_id,
+          }),
+          signal: AbortSignal.timeout(5000),
+        });
+      } catch (e) {
+        // A failed alert must never fail the ingest itself.
+        console.error("Bs-cash webhook failed:", e);
+      }
+    }
 
     return NextResponse.json({
       success: true,

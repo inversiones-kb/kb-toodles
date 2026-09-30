@@ -356,6 +356,24 @@ const RegisterBalanceCard = ({ data, refetch }: Props) => {
             </div>
           </InputGroupSection>
 
+          {(watch("money.bs.cash_system") ?? 0) > 0 ? (
+            <InputGroupSection title="Bolívares en efectivo (error de cajero)">
+              <div className="flex gap-2">
+                <FormattedNumberInput
+                  isDisabled
+                  control={control}
+                  name={"money.bs.cash_system"}
+                  placeholder={"Sistema bs"}
+                />
+                <FormattedNumberInput
+                  control={control}
+                  name={"money.bs.cash_cop_rate"}
+                  placeholder={"Tasa COP por bs"}
+                />
+              </div>
+            </InputGroupSection>
+          ) : null}
+
           <InputGroupSection title="Pago móvil">
             <div className="flex gap-2">
               <FormattedNumberInput

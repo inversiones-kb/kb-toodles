@@ -1,0 +1,90 @@
+{
+  "name": "[kb-toodles] Bs Cash Guard",
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kb-toodles-bs-cash-guard",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "node-webhook",
+      "name": "Bs Cash Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        300
+      ],
+      "webhookId": "kb-toodles-bs-cash-guard"
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $input.first().json.body ?? $input.first().json;\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst branches = { 'la-fria': 'La Fría', colon: 'Colón' };\nconst date = b.date\n  ? new Date(b.date).toLocaleDateString('es-CO', { timeZone: 'America/Bogota', day: '2-digit', month: '2-digit', year: 'numeric' })\n  : 'fecha desconocida';\nconst bs = Number(b.cash_bs).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\nconst text =\n  `⚠️ <b>Alerta</b>, la caja número <b>${esc(b.checkout_number)}</b> (${esc(b.cashier || 'sin cajero')}) ` +\n  `tiene bolívares en efectivo (${date}).\\n` +\n  `Sucursal: ${esc(branches[b.branch] ?? b.branch)}\\n` +\n  `Monto: <b>${bs} Bs</b>\\n` +\n  `Probable error: efectivo COP registrado como bolívares. Revisar el cuadre y asignar la tasa en el dashboard.`;\nreturn [{ json: { text } }];"
+      },
+      "id": "node-format",
+      "name": "Format Alert",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "1040562475",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "node-alert",
+      "name": "Alert Admins",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        440,
+        300
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "uzNbbuoJIIq0FtAO",
+          "name": "KBToodles - Telegram"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Bs Cash Webhook": {
+      "main": [
+        [
+          {
+            "node": "Format Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Alert": {
+      "main": [
+        [
+          {
+            "node": "Alert Admins",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
